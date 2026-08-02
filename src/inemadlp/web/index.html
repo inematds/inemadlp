@@ -1,3 +1,51 @@
 <!doctype html>
-<meta charset="utf-8">
-<title>inemadlp</title>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0d">
+  <title>inemadlp</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <h1>inemadlp</h1>
+
+    <section id="tela-login" hidden>
+      <form id="form-login">
+        <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" required>
+        <button type="submit">Entrar</button>
+      </form>
+      <p class="erro" id="erro-login" hidden></p>
+    </section>
+
+    <section id="tela-app" hidden>
+      <form id="form-job">
+        <input type="url" id="url" placeholder="Cole o link do vídeo" required>
+        <div class="formatos">
+          <label><input type="radio" name="formato" value="video" checked> Vídeo</label>
+          <label><input type="radio" name="formato" value="audio"> Áudio</label>
+        </div>
+        <button type="submit">Baixar</button>
+      </form>
+
+      <ul id="lista"></ul>
+
+      <details id="painel-cookies">
+        <summary>Cookies <span id="cookies-data"></span></summary>
+        <p class="ajuda">
+          No Edge ou Chrome, exporte com a extensão <em>Get cookies.txt LOCALLY</em>
+          estando logado na fonte, e envie o arquivo aqui.
+        </p>
+        <input type="file" id="arquivo-cookies" accept=".txt">
+        <p class="erro" id="erro-cookies" hidden></p>
+      </details>
+
+      <button id="sair" class="discreto">Sair</button>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
