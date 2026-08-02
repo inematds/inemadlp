@@ -150,6 +150,24 @@ def test_cookie_upload_rejects_bad_credentials_and_content(ambiente, logado):
     ).status_code == 400
 
 
+def test_cookie_upload_without_credentials_and_no_body_is_401(ambiente):
+    cliente, _, _ = ambiente
+    assert cliente.post("/api/cookies").status_code == 401
+
+
+def test_cookie_upload_with_invalid_token_and_no_body_is_401(ambiente):
+    cliente, _, _ = ambiente
+    assert cliente.post(
+        "/api/cookies",
+        headers={"X-Upload-Token": "errado"},
+    ).status_code == 401
+
+
+def test_cookie_upload_missing_file_field_is_400(logado):
+    cliente, _, _ = logado
+    assert cliente.post("/api/cookies", data={}).status_code == 400
+
+
 def test_serves_the_pwa(ambiente):
     cliente, _, _ = ambiente
     resposta = cliente.get("/")

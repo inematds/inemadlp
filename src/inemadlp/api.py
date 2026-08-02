@@ -6,10 +6,11 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, Response, UploadFile
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.datastructures import UploadFile as StarletteUploadFile
 
 from inemadlp import auth, cookies, downloader, worker
 from inemadlp.config import Settings, load_settings
@@ -118,7 +119,6 @@ def create_app(settings: Settings, store: Store, start_worker: bool = True) -> F
     @app.post("/api/cookies")
     async def enviar_cookies(
         request: Request,
-        arquivo: UploadFile = File(...),
         x_upload_token: str | None = Header(default=None),
     ):
         autorizado = sessao_valida(request) or auth.check_upload_token(
@@ -126,6 +126,10 @@ def create_app(settings: Settings, store: Store, start_worker: bool = True) -> F
         )
         if not autorizado:
             raise HTTPException(status_code=401, detail="não autenticado")
+        form = await request.form()
+        arquivo = form.get("arquivo")
+        if not isinstance(arquivo, StarletteUploadFile):
+            raise HTTPException(status_code=400, detail="arquivo ausente ou inválido")
         conteudo = (await arquivo.read()).decode("utf-8", errors="replace")
         try:
             total = cookies.save(conteudo, settings.cookies_path)
