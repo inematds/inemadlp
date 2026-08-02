@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>inemadlp — seu downloader de vídeo, na sua VPS</title>
+<meta name="description" content="Downloader pessoal de vídeo e áudio: você cola o link no celular, a sua VPS baixa com yt-dlp e devolve o arquivo, que se apaga sozinho depois de 6 horas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0c10; --bg2:#14141b; --card:#16161e; --line:#272730;
+    --txt:#e9e9ee; --mut:#9a9aa6; --amb:#E2A23B; --amb2:#f0c070; --sky:#38bdf8; --pro:#cbd5e1;
+    color-scheme:dark;
+  }
+  body.light{
+    --bg:#f6f7f9; --bg2:#eceef2; --card:#ffffff; --line:#e1e3ea;
+    --txt:#1a1a22; --mut:#5b5b68; --amb:#b9791d; --amb2:#a16207; --sky:#0369a1; --pro:#b45309;
+    color-scheme:light;
+  }
+  body.light .hero .glow{opacity:.5}
+  body.light pre{background:#0e0e14;color:#d6d6e0}
+  body.light pre .c{color:#8a8a98}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:Sora,sans-serif;line-height:1.15;margin:0}
+  a{color:var(--amb);text-decoration:none}
+  code,pre{font-family:"JetBrains Mono",monospace}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+  .mut{color:var(--mut)} .amb{color:var(--amb)}
+  .chip{display:inline-block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amb);font-weight:600;font-family:Sora}
+  nav{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);background:rgba(12,12,16,.78);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
+  nav .brand{display:flex;align-items:center;gap:8px;font-family:Sora;font-weight:800;letter-spacing:-.02em;color:var(--amb)}
+  nav .brand .emoji{font-size:1.25rem}
+  nav .sep{color:var(--mut);opacity:.45}
+  nav .inema{color:var(--sky);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .inema:hover{filter:brightness(1.15)}
+  nav .pro{color:var(--pro);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .pro:hover{filter:brightness(1.15)}
+  nav .clubpro{display:inline-flex;align-items:center;gap:6px}
+  nav .links{margin-left:auto;display:flex;align-items:center;gap:20px;font-size:.92rem}
+  nav .links a.sec{color:var(--mut)} nav .links a.sec:hover{color:var(--txt)}
+  .tgl{background:var(--bg2);border:1px solid var(--line);color:var(--txt);width:38px;height:38px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem}
+  .tgl:hover{border-color:var(--amb)}
+  .btn{display:inline-block;background:var(--amb);color:#1a1206;font-weight:600;padding:.6em 1.05em;border-radius:10px;font-family:Sora}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  @media(max-width:760px){nav .links a.sec{display:none}}
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero .glow{position:absolute;inset:-40% -20% auto auto;width:70%;height:600px;background:radial-gradient(closest-side,rgba(226,162,59,.22),transparent 70%);pointer-events:none}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:74px 22px}
+  .hero h1{font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;letter-spacing:-.025em}
+  .hero p.lead{font-size:1.18rem;color:var(--mut);margin:1.1em 0 1.6em;max-width:34ch}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .hero figure{margin:0;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000}
+  .hero figure img{width:100%;display:block}
+  @media(max-width:780px){.hero .wrap{grid-template-columns:1fr;padding:48px 22px}}
+  section{padding:62px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800;letter-spacing:-.02em}
+  section .sub{color:var(--mut);margin:.6em 0 2em;max-width:62ch}
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:820px){.g3,.g4{grid-template-columns:1fr 1fr}}
+  @media(max-width:540px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{font-size:1.05rem;margin-bottom:.4em}
+  .card p{color:var(--mut);font-size:.92rem;margin:0}
+  .card pre{margin:.9em 0 0}
+  .num{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:8px;background:rgba(226,162,59,.14);color:var(--amb);font-family:Sora;font-weight:800;font-size:.9rem;margin-bottom:.7em}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .flow span{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.45em .9em;font-size:.85rem;font-family:Sora;font-weight:600}
+  .flow .arr{color:var(--amb);border:none;background:none;padding:0 .1em}
+  pre{background:#0a0a0e;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;font-size:.86rem;line-height:1.6;color:#d6d6e0}
+  pre .c{color:#6f6f7c} pre .k{color:var(--amb2)} pre .s{color:#9ece6a}
+  .step{display:grid;grid-template-columns:46px 1fr;gap:16px;margin-bottom:26px}
+  .step .b{width:46px;height:46px;border-radius:12px;background:var(--amb);color:#1a1206;font-family:Sora;font-weight:800;font-size:1.25rem;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:1.12rem;margin-bottom:.3em}
+  .step p{color:var(--mut);margin:.2em 0 .7em}
+  .phase{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .phase:last-child{border:none}
+  .phase .tag{flex:0 0 92px;font-family:Sora;font-weight:800;color:var(--amb)}
+  .phase .d strong{display:block;margin-bottom:.2em}
+  .phase .d span{color:var(--mut);font-size:.92rem}
+  footer{padding:46px 0;text-align:center;color:var(--mut);font-size:.9rem}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.78rem;color:var(--mut);margin:0 4px}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="brand" href="#top"><span class="emoji">⬇️</span> inemadlp</a>
+  <span class="sep">|</span>
+  <span class="clubpro">
+    <a class="inema" href="https://inema.club" target="_blank" rel="noopener">INEMA.CLUB</a>
+    <span class="sep">-</span>
+    <a class="pro" href="https://inema.pro" target="_blank" rel="noopener">PRO</a>
+  </span>
+  <div class="links">
+    <a class="sec" href="#oque">O que é</a>
+    <a class="sec" href="#fluxo">Como funciona</a>
+    <a class="sec" href="#pre">Pré-requisitos</a>
+    <a class="sec" href="#guia">Guia de uso</a>
+    <a class="sec" href="#cookies">Cookies</a>
+    <a class="sec" href="#roadmap">Roadmap</a>
+    <button class="tgl" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">🌙</button>
+    <a class="btn" href="https://github.com/inematds/inemadlp" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</div></nav>
+
+<header class="hero" id="top">
+  <div class="glow"></div>
+  <div class="wrap">
+    <div>
+      <span class="chip">Ferramenta · uso pessoal</span>
+      <h1>Cola o link. A <span class="amb">sua VPS</span> baixa.</h1>
+      <p class="lead">Um downloader de vídeo e áudio que roda na sua própria máquina, protegido por senha, com o arquivo se apagando sozinho depois de 6 horas.</p>
+      <div class="cta">
+        <a class="btn" href="#guia">Começar o guia</a>
+        <a class="btn ghost" href="https://github.com/inematds/inemadlp" target="_blank" rel="noopener">Ver no GitHub</a>
+      </div>
+    </div>
+    <figure><img src="assets/hero.png" alt="inemadlp — downloader pessoal em VPS"></figure>
+  </div>
+</header>
+
+<section id="oque"><div class="wrap">
+  <span class="chip">O que é</span>
+  <h2>Um yt-dlp com interface, acessível do celular</h2>
+  <p class="sub">Você abre uma página na sua VPS, cola a URL, escolhe vídeo ou áudio e recebe o arquivo. Por baixo é o yt-dlp de sempre — a diferença é não precisar de terminal, e o download sair de um IP residencial de confiança em vez do seu celular.</p>
+  <div class="grid g3">
+    <div class="card"><h3>📱 Funciona do celular</h3><p>A interface é uma PWA: instala na tela de início, entra uma vez com a senha e nunca mais pede login. Nada de app, nada de loja.</p></div>
+    <div class="card"><h3>🧹 Não entope o disco</h3><p>Todo arquivo baixado é apagado 6 horas depois, e uma varredura recolhe também as sobras de downloads que falharam. A VPS não vira depósito.</p></div>
+    <div class="card"><h3>🍪 Passa pelo bloqueio</h3><p>Você envia os cookies do seu navegador logado pela própria interface. É o que evita o "Sign in to confirm you're not a bot" que barra IPs de datacenter.</p></div>
+  </div>
+</div></section>
+
+<section id="fluxo"><div class="wrap">
+  <span class="chip">Como funciona</span>
+  <h2>Da URL ao arquivo, sem você acompanhar</h2>
+  <p class="sub">Um processo só: FastAPI serve a interface e a API, e um worker consome a fila um job por vez — de propósito, para não levar rate-limit da fonte. O Caddy cuida do HTTPS.</p>
+  <div class="flow">
+    <span>Cola o link</span><span class="arr">→</span>
+    <span>Entra na fila</span><span class="arr">→</span>
+    <span>yt-dlp baixa</span><span class="arr">→</span>
+    <span>ffmpeg junta</span><span class="arr">→</span>
+    <span>Botão "Baixar"</span><span class="arr">→</span>
+    <span>Apaga em 6h</span>
+  </div>
+  <div class="grid g3" style="margin-top:26px">
+    <div class="card"><h3>Um job por vez</h3><p>A fila é serial. Dois downloads simultâneos só aumentariam a chance de bloqueio na origem.</p></div>
+    <div class="card"><h3>Sem retentativa automática</h3><p>Falhou, você reenfileira. Retentar sozinho contra uma fonte que bloqueou só queima o IP mais rápido.</p></div>
+    <div class="card"><h3>Retomada de download</h3><p>A entrega suporta Range, então uma queda de sinal no celular continua de onde parou — por isso o TTL, e não apagar no primeiro download.</p></div>
+  </div>
+</div></section>
+
+<section id="pre"><div class="wrap">
+  <span class="chip">Pré-requisitos</span>
+  <h2>O que precisa estar pronto</h2>
+  <p class="sub">Uma VPS Linux com Docker e um subdomínio apontado para ela. Mais nada — ffmpeg e yt-dlp vêm dentro da imagem.</p>
+  <div class="grid g3">
+    <div class="card"><h3>Docker + Compose</h3><p>É o único requisito de software na VPS.</p><pre><span class="c"># Ubuntu</span>
+<span class="k">curl -fsSL https://get.docker.com | sh</span></pre></div>
+    <div class="card"><h3>Um subdomínio</h3><p>Aponte um registro A para o IP da VPS <em>antes</em> de subir: o Caddy emite o certificado no primeiro acesso.</p><pre><span class="c"># exemplo</span>
+dlp.seudominio  A  <span class="s">203.0.113.10</span></pre></div>
+    <div class="card"><h3>Um navegador logado</h3><p>No PC ou no celular, logado nas fontes de onde você baixa. É de lá que saem os cookies.</p><pre><span class="c"># extensão (Edge/Chrome)</span>
+<span class="k">Get cookies.txt LOCALLY</span></pre></div>
+  </div>
+</div></section>
+
+<section id="guia"><div class="wrap">
+  <span class="chip">Guia de uso · passo a passo</span>
+  <h2>Do zero ao primeiro download</h2>
+  <p class="sub">São cinco passos. Do terceiro em diante você já está usando pelo celular.</p>
+
+  <div class="step"><div class="b">1</div><div>
+    <h3>Clonar e configurar</h3>
+    <p>O <code>.env</code> guarda a senha e as chaves. Ele nunca vai para o git.</p>
+<pre><span class="k">git clone https://github.com/inematds/inemadlp.git &amp;&amp; cd inemadlp</span>
+<span class="k">cp .env.example .env</span>
+
+<span class="c"># gere a senha e as duas chaves (uma linha cada)</span>
+<span class="k">python3 -c "import secrets; print(secrets.token_urlsafe(24))"</span>  <span class="c"># DLP_PASSWORD</span>
+<span class="k">python3 -c "import secrets; print(secrets.token_urlsafe(32))"</span>  <span class="c"># DLP_SECRET_KEY</span>
+<span class="k">python3 -c "import secrets; print(secrets.token_urlsafe(32))"</span>  <span class="c"># DLP_UPLOAD_TOKEN</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">2</div><div>
+    <h3>Subir</h3>
+    <p>Preencha o <code>.env</code> com os valores acima e o seu domínio, proteja o arquivo e suba. O HTTPS é automático.</p>
+<pre><span class="k">echo "DLP_DOMAIN=dlp.seudominio" &gt;&gt; .env</span>
+<span class="k">chmod 600 .env</span>
+<span class="k">docker compose up --build -d</span>  <span class="c"># Caddy emite o certificado sozinho</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">3</div><div>
+    <h3>Instalar no celular</h3>
+    <p>Abra o domínio, entre com a senha e use "Adicionar à tela de início". A sessão não expira — você loga uma vez e pronto.</p>
+<pre><span class="c"># no navegador do celular</span>
+<span class="s">https://dlp.seudominio</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">4</div><div>
+    <h3>Enviar os cookies</h3>
+    <p>Logado na fonte, exporte com a extensão <em>Get cookies.txt LOCALLY</em> e mande o arquivo no painel <strong>Cookies</strong> da própria interface. Funciona do Windows, do Linux e do celular.</p>
+<pre><span class="c"># atalho, só na máquina Linux com Firefox logado</span>
+<span class="k">DLP_URL=https://dlp.seudominio DLP_UPLOAD_TOKEN=... ./sync-cookies.sh</span>
+<span class="c"># -&gt; {"cookies": 81}</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">5</div><div>
+    <h3>Baixar</h3>
+    <p>Cole a URL, escolha <strong>Vídeo</strong> (MP4 até 1080p) ou <strong>Áudio</strong> (M4A) e aguarde. O progresso aparece na lista e o botão "Baixar" surge no fim.</p>
+<pre><span class="c"># o arquivo fica disponível por 6 horas, então some</span>
+<span class="c"># quer mais tempo? DLP_TTL_HOURS no .env</span></pre>
+  </div></div>
+</div></section>
+
+<section id="cookies"><div class="wrap">
+  <span class="chip">Cookies</span>
+  <h2>Por que isso existe, e quando renovar</h2>
+  <p class="sub">O YouTube e as outras fontes desafiam IPs de datacenter. Os cookies de um navegador logado resolvem isso — e são a única manutenção recorrente do projeto.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Quando um download falhar</h3><p>A própria interface diz <em>"cookies expirados"</em> quando reconhece o motivo. Aí você exporta de novo e reenvia — não precisa adivinhar. Na prática, cookies do YouTube duram semanas.</p></div>
+    <div class="card"><h3>Por que não dá para automatizar no Windows</h3><p>Edge e Chrome cifram os cookies com App-Bound Encryption desde a versão 127: só o próprio navegador obtém a chave. Por isso o caminho principal é o upload, e não um script.</p></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Cron semanal (opcional)</h3><p>Na máquina Linux com Firefox logado, dá para nunca ver o erro.</p><pre><span class="c"># toda segunda, 9h</span>
+0 9 * * 1 DLP_URL=<span class="s">https://dlp.seudominio</span> DLP_UPLOAD_TOKEN=... /caminho/sync-cookies.sh</pre></div>
+    <div class="card"><h3>Operação do dia a dia</h3><p>Praticamente nula.</p><pre><span class="k">docker compose logs -f app</span>     <span class="c"># ver o que houve</span>
+<span class="k">docker compose restart app</span>     <span class="c"># atualiza o yt-dlp no boot</span></pre></div>
+  </div>
+</div></section>
+
+<section id="roadmap"><div class="wrap">
+  <span class="chip">Roadmap</span>
+  <h2>Onde está e o que ficou de fora</h2>
+  <p class="sub">A v1 está completa e verificada ponta a ponta. O que não está aqui foi cortado de propósito — é ferramenta pessoal, não produto.</p>
+  <div class="phase"><div class="tag">v1 ✓</div><div class="d"><strong>Completo</strong><span>Fila, download de vídeo e áudio, PWA com senha, upload de cookies, expiração automática, deploy com Docker e Caddy. 77 testes, mais um que baixa um vídeo real, mais verificação da interface no navegador.</span></div></div>
+  <div class="phase"><div class="tag">Fora</div><div class="d"><strong>Cortado por YAGNI</strong><span>Escolha de resolução, playlists, legendas, corte de trechos, múltiplos usuários e retentativa automática. Cada um desses existiria para um público que este projeto não tem.</span></div></div>
+  <div class="phase"><div class="tag">Talvez</div><div class="d"><strong>Se doer o suficiente</strong><span>Botão de reenfileirar com um clique (hoje você recola a URL) e um instalador de PWA mais completo no Android.</span></div></div>
+</div></section>
+
+<footer>
+  <div class="wrap">
+    <div class="pill">Python 3.12</div><div class="pill">FastAPI</div><div class="pill">yt-dlp + ffmpeg</div><div class="pill">SQLite</div><div class="pill">Docker + Caddy</div>
+    <p style="margin-top:18px">inemadlp · uso pessoal, uma VPS, um usuário ·
+      <a href="https://github.com/inematds/inemadlp">inematds/inemadlp</a> ·
+      <a href="https://inema.club">INEMA.CLUB</a></p>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var KEY='inemadlp-theme';
+    var b=document.body, t=document.getElementById('themeToggle');
+    if(localStorage.getItem(KEY)==='light'){ b.classList.add('light'); t.textContent='☀️'; }
+    t.addEventListener('click',function(){
+      var light=b.classList.toggle('light');
+      t.textContent=light?'☀️':'🌙';
+      localStorage.setItem(KEY, light?'light':'dark');
+    });
+  })();
+</script>
+</body>
+</html>

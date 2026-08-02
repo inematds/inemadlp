@@ -2,6 +2,10 @@
 
 Downloader de vídeos pessoal (FastAPI + yt-dlp) rodando em VPS.
 
+## 📖 Guia de uso
+
+Guia completo (landing + passo a passo): **https://inematds.github.io/inemadlp/guia/**
+
 ## Cookies
 
 Caminho principal: exporte o `cookies.txt` com a extensão *Get cookies.txt LOCALLY*
