@@ -5,7 +5,8 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
-    "yt-dlp>=2024.12.13",
+    "yt-dlp[default]>=2026.7.4",
+    "deno>=2.3",
     "itsdangerous>=2.2",
     "python-multipart>=0.0.20",
 ]

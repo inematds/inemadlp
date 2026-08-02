@@ -78,8 +78,12 @@ Você precisa de três coisas prontas:
 | O quê | Por quê |
 |---|---|
 | Uma **VPS Linux** com acesso `ssh` | é onde tudo roda |
-| **Docker + Compose** instalados nela | única dependência; ffmpeg e yt-dlp vêm na imagem |
+| **Docker + Compose** instalados nela | única dependência; ffmpeg, yt-dlp e um runtime JS (Deno) vêm na imagem |
 | Um **subdomínio** apontado para o IP da VPS | o Caddy emite o certificado HTTPS sozinho |
+
+> O YouTube passou a exigir um runtime JavaScript para resolver seus desafios
+> antes de liberar os formatos de vídeo. Por isso a imagem já vem com Deno e o
+> suporte a EJS do yt-dlp, atualizados a cada boot junto com o próprio yt-dlp.
 
 Instalar o Docker, se ainda não tiver:
 
@@ -426,6 +430,7 @@ git pull && docker compose up --build -d
 |---|---|---|
 | O site não abre, erro de certificado | DNS não propagou, ou porta 80 fechada | `dig +short dlp.seudominio` e confira o firewall do provedor |
 | Download falha com "cookies expirados" | os cookies venceram | exporte e envie de novo; depois reenfileire o link (não há retry automático) |
+| Download falha com "Requested format is not available" ou lista de formatos vazia | o YouTube exige runtime JS (Deno/EJS) e a imagem está desatualizada | `docker compose pull && docker compose up -d --build`; o boot já atualiza yt-dlp/deno sozinho, mas uma imagem muito antiga pode não ter o suporte a EJS ainda |
 | Download falha com outra mensagem | a fonte não é suportada, ou a URL está errada | a mensagem crua do yt-dlp aparece na lista |
 | O arquivo sumiu | passou o TTL de 6 horas | enfileire de novo, ou aumente `DLP_TTL_HOURS` |
 | Job travado em "baixando" após reiniciar | o container reiniciou no meio | ele vira "erro" sozinho no boot; reenfileire |
