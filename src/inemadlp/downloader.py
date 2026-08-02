@@ -60,6 +60,26 @@ def is_cookie_error(mensagem: str) -> bool:
     return any(marcador in baixa for marcador in COOKIES_EXPIRED_MARKERS)
 
 
+def _pick_output_file(destino: Path, fmt: str) -> Path:
+    """Localiza o arquivo de saída pelo formato esperado.
+
+    Restringe aos arquivos com as extensões esperadas (.mp4 para video, .m4a para audio)
+    e retorna o maior deles. Descarta fragmentos (.part, .ytdl) de downloads interrompidos.
+    Levanta DownloadError se nenhum arquivo candidato for encontrado.
+    """
+    extensoes = {"video": ".mp4", "audio": ".m4a"}
+    ext_esperada = extensoes[fmt]
+
+    candidatos = [
+        caminho for caminho in destino.iterdir()
+        if caminho.is_file() and caminho.suffix == ext_esperada
+    ]
+    if not candidatos:
+        raise DownloadError(f"o yt-dlp terminou sem produzir arquivo {ext_esperada}")
+
+    return max(candidatos, key=lambda caminho: caminho.stat().st_size)
+
+
 def download(
     url: str,
     fmt: str,
@@ -82,13 +102,9 @@ def download(
     opts["progress_hooks"] = [hook]
 
     with YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+        info = ydl.extract_info(url, download=True)
         titulo = info.get("title") or url
         on_title(titulo)
-        ydl.download([url])
 
-    arquivos = [caminho for caminho in destino.iterdir() if caminho.is_file()]
-    if not arquivos:
-        raise DownloadError("o yt-dlp terminou sem produzir arquivo")
-    arquivo = max(arquivos, key=lambda caminho: caminho.stat().st_size)
+    arquivo = _pick_output_file(destino, fmt)
     return DownloadResult(path=arquivo, title=titulo, size=arquivo.stat().st_size)
