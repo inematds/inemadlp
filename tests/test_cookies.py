@@ -47,3 +47,15 @@ def test_last_updated(tmp_path):
     assert cookies.last_updated(destino) is None
     cookies.save(VALIDO, destino)
     assert isinstance(cookies.last_updated(destino), int)
+
+
+def test_save_rejects_missing_netscape_header(tmp_path):
+    """Isolates the header requirement: valid 7-field cookie line without header must be rejected."""
+    destino = tmp_path / "cookies.txt"
+    # Perfectly well-formed Netscape cookie format (7 TAB-separated fields)
+    # but WITHOUT the required "# Netscape HTTP Cookie File" header line.
+    # This input would have been accepted by the pre-fix code.
+    sem_cabecalho = ".youtube.com\tTRUE\t/\tTRUE\t1800000000\tSID\tabc123\n"
+    with pytest.raises(cookies.InvalidCookieFile):
+        cookies.save(sem_cabecalho, destino)
+    assert not destino.exists()
