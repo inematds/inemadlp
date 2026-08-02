@@ -13,4 +13,6 @@ VOLUME /data
 EXPOSE 8000
 
 # O yt-dlp quebra quando as fontes mudam: atualizar a cada boot.
-CMD ["sh", "-c", "pip install --no-cache-dir -q -U yt-dlp && exec uvicorn inemadlp.api:app --host 0.0.0.0 --port 8000"]
+# A atualizacao nao pode derrubar o servico: se a rede/PyPI falhar, segue
+# com a versao ja instalada (mas o erro fica visivel no log).
+CMD ["sh", "-c", "pip install --no-cache-dir -q -U yt-dlp || echo 'AVISO: falha ao atualizar yt-dlp, seguindo com a versao instalada' >&2; exec uvicorn inemadlp.api:app --host 0.0.0.0 --port 8000"]
