@@ -1,0 +1,18 @@
+{$DLP_DOMAIN} {
+	reverse_proxy app:8000 {
+		# Vídeos grandes: sem timeout de leitura na entrega do arquivo.
+		flush_interval -1
+	}
+	request_body {
+		max_size 10MB
+	}
+	# Só comprime texto (HTML/CSS/JS) — nunca o download do vídeo. Comprimir
+	# application/octet-stream derruba o Content-Length e passa a servir em
+	# chunked, o que quebra retomada por Range num celular.
+	encode {
+		gzip
+		match {
+			header Content-Type text/*
+		}
+	}
+}

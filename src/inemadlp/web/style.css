@@ -1,0 +1,92 @@
+:root {
+  --fundo: #0b0b0d;
+  --superficie: #16161a;
+  --borda: #26262c;
+  --texto: #e8e6e3;
+  --suave: #8b8b93;
+  --ambar: #f5a524;
+  --erro: #f2545b;
+  --ok: #3ecf8e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font: 16px/1.5 system-ui, -apple-system, sans-serif;
+  padding: env(safe-area-inset-top) 1rem 2rem;
+}
+
+main { max-width: 40rem; margin: 0 auto; }
+
+h1 { color: var(--ambar); font-size: 1.5rem; margin: 1.5rem 0; }
+
+input, button, a.baixar {
+  font: inherit;
+  border-radius: 8px;
+  border: 1px solid var(--borda);
+  padding: 0.7rem 0.9rem;
+}
+
+input[type="url"], input[type="password"] {
+  width: 100%;
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+button[type="submit"] {
+  width: 100%;
+  margin-top: 0.75rem;
+  background: var(--ambar);
+  color: #1a1200;
+  border: none;
+  font-weight: 600;
+}
+
+.formatos { display: flex; gap: 1.5rem; margin-top: 0.75rem; color: var(--suave); }
+
+ul { list-style: none; padding: 0; margin: 1.5rem 0; }
+
+.job {
+  display: grid;
+  gap: 0.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--suave);
+  border-radius: 8px;
+  padding: 0.9rem;
+  margin-bottom: 0.6rem;
+  overflow-wrap: anywhere;
+}
+
+.job.running { border-left-color: var(--ambar); }
+.job.ready { border-left-color: var(--ok); }
+.job.error { border-left-color: var(--erro); }
+
+.estado { color: var(--suave); font-size: 0.875rem; }
+.job.error .estado { color: var(--erro); }
+
+a.baixar {
+  justify-self: start;
+  margin-top: 0.5rem;
+  background: transparent;
+  color: var(--ok);
+  border-color: var(--ok);
+  text-decoration: none;
+}
+
+#painel-cookies { border: 1px solid var(--borda); border-radius: 8px; padding: 0.9rem; }
+#painel-cookies summary { cursor: pointer; color: var(--suave); }
+.ajuda { color: var(--suave); font-size: 0.875rem; }
+
+.erro { color: var(--erro); }
+.ok { color: var(--ok); }
+
+.discreto {
+  margin-top: 1.5rem;
+  background: transparent;
+  color: var(--suave);
+  width: auto;
+}
