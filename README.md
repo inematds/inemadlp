@@ -277,7 +277,7 @@ não expira: você não vai digitar a senha de novo.
 Sem isso, o YouTube provavelmente vai recusar os downloads da sua VPS, porque o
 IP é de datacenter. No Edge ou no Chrome, **logado** no YouTube:
 
-1. instale a extensão **Get cookies.txt LOCALLY**;
+1. instale a extensão [**Get cookies.txt LOCALLY**](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc);
 2. abra o YouTube, clique na extensão e exporte o `cookies.txt`;
 3. no inemadlp, abra o painel **Cookies** e envie o arquivo.
 
@@ -314,12 +314,14 @@ protegido pela senha do inemadlp.
 
 **1. Instalar a extensão** — uma vez só.
 
-Procure na loja de extensões por **Get cookies.txt LOCALLY** e instale. É open
-source e funciona offline: ela lê os cookies do próprio navegador e gera um
+**Get cookies.txt LOCALLY** — link direto:
+https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc
+
+É open source e funciona offline: ela lê os cookies do próprio navegador e gera um
 arquivo, sem mandar nada para lugar nenhum.
 
-- Chrome: https://chromewebstore.google.com/ → busque pelo nome
-- Edge: instala igual, a partir da mesma loja do Chrome
+Serve para o Chrome e para o Edge — o Edge instala a partir dessa mesma loja
+(ele pede uma confirmação para permitir extensões de outra loja, na primeira vez).
 
 **2. Abrir o site e confirmar que está logado**
 
