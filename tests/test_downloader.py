@@ -82,6 +82,33 @@ def test_pick_output_file_for_audio_ignores_non_m4a(tmp_path):
     assert resultado == arquivo_real
 
 
+def test_resolve_output_file_uses_requested_downloads_filepath(tmp_path):
+    """FINDING 4: fonte progressiva pode entregar .webm sem merge/remux; o
+    caminho autoritativo vem de info['requested_downloads'][0]['filepath'],
+    não da extensão adivinhada por _pick_output_file (que só aceita .mp4)."""
+    webm = tmp_path / "video.webm"
+    webm.write_text("conteudo webm")
+    info = {"requested_downloads": [{"filepath": str(webm)}]}
+
+    resultado = downloader._resolve_output_file(info, tmp_path, "video")
+    assert resultado == webm
+
+
+def test_resolve_output_file_falls_back_when_info_missing(tmp_path):
+    mp4 = tmp_path / "video.mp4"
+    mp4.write_text("conteudo")
+    resultado = downloader._resolve_output_file({}, tmp_path, "video")
+    assert resultado == mp4
+
+
+def test_resolve_output_file_falls_back_when_filepath_missing_on_disk(tmp_path):
+    mp4 = tmp_path / "video.mp4"
+    mp4.write_text("conteudo")
+    info = {"requested_downloads": [{"filepath": str(tmp_path / "nao-existe.mkv")}]}
+    resultado = downloader._resolve_output_file(info, tmp_path, "video")
+    assert resultado == mp4
+
+
 @pytest.mark.integration
 def test_downloads_a_real_short_video(tmp_path):
     progresso: list[float] = []

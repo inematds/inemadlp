@@ -72,6 +72,28 @@ def test_list_expirable_only_ready_past_cutoff(store):
     assert [j.id for j in store.list_expirable(cutoff=5000)] == [velho.id]
 
 
+def test_list_expirable_includes_error_jobs_past_cutoff(store):
+    falho = store.create("https://a", "video", now=1000)
+    store.claim_next(now=1001)
+    store.mark_error(falho.id, "container reiniciado")
+    assert [j.id for j in store.list_expirable(cutoff=5000)] == [falho.id]
+
+
+def test_list_expirable_excludes_pending_and_running(store):
+    store.create("https://a", "video", now=1000)  # fica pending
+    rodando = store.create("https://b", "video", now=1000)
+    store.claim_next(now=1001)
+    assert store.get(rodando.id).status in ("pending", "running")
+    assert store.list_expirable(cutoff=5000) == []
+
+
+def test_known_ids_contains_all_statuses(store):
+    a = store.create("https://a", "video", now=1000)
+    b = store.create("https://b", "video", now=1000)
+    store.claim_next(now=1001)
+    assert {a.id, b.id} <= store.known_ids()
+
+
 def test_mark_expired_and_delete_older_than(store):
     job = store.create("https://a", "video", now=1000)
     store.claim_next(now=1001)

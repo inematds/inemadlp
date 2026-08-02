@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 _CAMPOS = 7
+_CABECALHO_NETSCAPE = "# Netscape HTTP Cookie File"
 
 
 class InvalidCookieFile(ValueError):
@@ -12,6 +13,14 @@ class InvalidCookieFile(ValueError):
 
 
 def _contar_cookies(conteudo: str) -> int:
+    linhas = conteudo.splitlines()
+    if not any(linha.strip() == _CABECALHO_NETSCAPE for linha in linhas[:5]):
+        raise InvalidCookieFile(
+            "arquivo sem a linha de cabeçalho obrigatória "
+            f"'{_CABECALHO_NETSCAPE}' — o http.cookiejar do Python (usado pelo "
+            "yt-dlp) exige essa linha para reconhecer o arquivo como Netscape; "
+            "exporte o cookies.txt de novo com uma extensão que gere esse cabeçalho"
+        )
     total = 0
     for linha in conteudo.splitlines():
         crua = linha.strip()

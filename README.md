@@ -33,6 +33,14 @@ certificado sozinho no primeiro acesso.
 Trocar a senha: editar `DLP_PASSWORD` no `.env` e rodar `docker compose restart app`.
 As sessões já abertas continuam válidas.
 
+A senha em `DLP_PASSWORD` é a única coisa entre a internet e o cookie jar do
+seu YouTube/Google/Instagram — não existe throttle de login por design, então
+ela precisa ser longa e aleatória, não uma senha de memória. Gere uma com:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(24))"
+```
+
 ## Operação
 
 - **Um download falhou dizendo "cookies expirados":** exporte um `cookies.txt` novo

@@ -6,5 +6,13 @@
 	request_body {
 		max_size 10MB
 	}
-	encode gzip
+	# Só comprime texto (HTML/CSS/JS) — nunca o download do vídeo. Comprimir
+	# application/octet-stream derruba o Content-Length e passa a servir em
+	# chunked, o que quebra retomada por Range num celular.
+	encode {
+		gzip
+		match {
+			header Content-Type text/*
+		}
+	}
 }

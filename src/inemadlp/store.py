@@ -128,10 +128,16 @@ class Store:
     def list_expirable(self, cutoff: int) -> list[Job]:
         with self._conn() as conn:
             linhas = conn.execute(
-                "SELECT * FROM jobs WHERE status = ? AND created_at < ?",
-                (READY, cutoff),
+                "SELECT * FROM jobs WHERE status IN (?, ?) AND created_at < ?",
+                (READY, ERROR, cutoff),
             ).fetchall()
         return [self._row_to_job(linha) for linha in linhas]
+
+    def known_ids(self) -> set[str]:
+        """Todos os IDs de jobs que ainda têm linha no banco (qualquer status)."""
+        with self._conn() as conn:
+            linhas = conn.execute("SELECT id FROM jobs").fetchall()
+        return {linha["id"] for linha in linhas}
 
     def delete_older_than(self, cutoff: int) -> int:
         with self._conn() as conn:

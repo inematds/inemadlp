@@ -14,6 +14,7 @@ COOKIES_EXPIRED_MARKERS = (
     "private video",
     "--cookies",
     "rate-limit reached",
+    "does not look like a netscape format",
 )
 
 _FORMATOS = {
@@ -47,7 +48,10 @@ def build_opts(fmt: str, destino: Path, cookies_path: Path | None) -> dict:
         "quiet": True,
         "no_warnings": True,
         "noprogress": True,
-        "retries": 3,
+        # 1 tentativa só: o projeto existe pra não queimar o IP da VPS em
+        # detecção de bot das fontes — bater 4x (retries=3) num bloqueio é
+        # o oposto do objetivo.
+        "retries": 1,
         "restrictfilenames": True,
     }
     if cookies_path is not None and Path(cookies_path).exists():
@@ -80,6 +84,22 @@ def _pick_output_file(destino: Path, fmt: str) -> Path:
     return max(candidatos, key=lambda caminho: caminho.stat().st_size)
 
 
+def _resolve_output_file(info: dict, destino: Path, fmt: str) -> Path:
+    """Usa o caminho que o próprio yt-dlp reporta como resultado real do download.
+
+    Isso evita adivinhar pela extensão (ex.: 'b[height<=1080]' sem merge/remux
+    pode legitimamente entregar um .webm progressivo, o que _pick_output_file
+    rejeitaria por não ser .mp4/.m4a). Cai para _pick_output_file quando a
+    informação não está disponível.
+    """
+    downloads = info.get("requested_downloads") or []
+    if downloads:
+        caminho = downloads[0].get("filepath")
+        if caminho and Path(caminho).is_file():
+            return Path(caminho)
+    return _pick_output_file(destino, fmt)
+
+
 def download(
     url: str,
     fmt: str,
@@ -106,5 +126,5 @@ def download(
         titulo = info.get("title") or url
         on_title(titulo)
 
-    arquivo = _pick_output_file(destino, fmt)
+    arquivo = _resolve_output_file(info, destino, fmt)
     return DownloadResult(path=arquivo, title=titulo, size=arquivo.stat().st_size)
