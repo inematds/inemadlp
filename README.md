@@ -32,3 +32,12 @@ certificado sozinho no primeiro acesso.
 
 Trocar a senha: editar `DLP_PASSWORD` no `.env` e rodar `docker compose restart app`.
 As sessões já abertas continuam válidas.
+
+## Operação
+
+- **Um download falhou dizendo "cookies expirados":** exporte um `cookies.txt` novo
+  pela extensão e envie no painel Cookies. Não há retry automático — reenfileire o
+  link depois.
+- **Arquivo sumiu:** o TTL é de 6 horas (`DLP_TTL_HOURS`). Reenfileire.
+- **Logs:** `docker compose logs -f app`.
+- **Atualizar o yt-dlp:** `docker compose restart app` (ele atualiza a cada boot).
