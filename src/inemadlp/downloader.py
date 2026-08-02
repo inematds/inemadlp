@@ -18,13 +18,25 @@ COOKIES_EXPIRED_MARKERS = (
     "invalid netscape format cookies file",
 )
 
+# O limite de 1080p é uma preferência, não uma exigência: a VPS (IP de
+# datacenter) às vezes recebe do YouTube uma lista de formatos mais estreita
+# do que a vista de um IP residencial, mesmo com cookies válidos. Sem uma
+# cauda de fallback, o seletor rígido estoura "Requested format is not
+# available" quando o formato ideal não existe. A cadeia abaixo mantém a
+# preferência ≤1080 primeiro (comportamento normal inalterado) e só afrouxa
+# progressivamente se necessário, pra nunca virar erro por causa de uma
+# lista de formatos incomum.
 _FORMATOS = {
     "video": {
-        "format": "bv*[height<=1080]+ba/b[height<=1080]",
+        "format": (
+            "bv*[height<=1080]+ba/b[height<=1080]"
+            "/bv*+ba/b"
+            "/best"
+        ),
         "merge_output_format": "mp4",
     },
     "audio": {
-        "format": "ba",
+        "format": "ba/b/best",
         "postprocessors": [
             {"key": "FFmpegExtractAudio", "preferredcodec": "m4a", "preferredquality": "0"}
         ],
@@ -63,6 +75,42 @@ def build_opts(fmt: str, destino: Path, cookies_path: Path | None) -> dict:
 def is_cookie_error(mensagem: str) -> bool:
     baixa = (mensagem or "").lower()
     return any(marcador in baixa for marcador in COOKIES_EXPIRED_MARKERS)
+
+
+def is_format_error(mensagem: str) -> bool:
+    baixa = (mensagem or "").lower()
+    return "requested format is not available" in baixa
+
+
+def _resumo_formatos_disponiveis(info: dict, limite: int = 12) -> str:
+    """Monta uma linha em português com os formatos que o YouTube realmente ofereceu.
+
+    Ignora entradas sem vídeo nem áudio (ex.: storyboards) e limita a
+    quantidade de itens listados para a UI continuar legível.
+    """
+    formatos = info.get("formats") or []
+    linhas = []
+    for formato in formatos:
+        vcodec = formato.get("vcodec") or "none"
+        acodec = formato.get("acodec") or "none"
+        if vcodec == "none" and acodec == "none":
+            continue
+        if formato.get("height") is None and acodec == "none":
+            continue
+        fmt_id = formato.get("format_id", "?")
+        ext = formato.get("ext", "?")
+        altura = formato.get("height")
+        altura_txt = f"{altura}p" if altura else "só áudio"
+        linhas.append(f"{fmt_id} ({ext}, {altura_txt}, vcodec={vcodec}, acodec={acodec})")
+
+    if not linhas:
+        return "nenhum formato de vídeo/áudio foi listado pelo YouTube"
+
+    truncado = linhas[:limite]
+    resumo = "; ".join(truncado)
+    if len(linhas) > limite:
+        resumo += f"; ... (+{len(linhas) - limite} outros)"
+    return resumo
 
 
 def _pick_output_file(destino: Path, fmt: str) -> Path:
@@ -123,7 +171,25 @@ def download(
     opts["progress_hooks"] = [hook]
 
     with YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url, download=True)
+        try:
+            info = ydl.extract_info(url, download=True)
+        except DownloadError as erro:
+            mensagem = str(erro)
+            if is_format_error(mensagem):
+                try:
+                    info_bruto = ydl.extract_info(url, download=False)
+                except DownloadError:
+                    info_bruto = None
+                resumo = (
+                    _resumo_formatos_disponiveis(info_bruto)
+                    if info_bruto
+                    else "não foi possível obter a lista de formatos"
+                )
+                raise DownloadError(
+                    "Nenhum formato compatível foi encontrado para este vídeo. "
+                    f"Formatos disponíveis: {resumo}"
+                ) from erro
+            raise
         titulo = info.get("title") or url
         on_title(titulo)
 
