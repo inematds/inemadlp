@@ -6,7 +6,9 @@ async function api(caminho, opcoes = {}) {
   const resposta = await fetch(caminho, opcoes);
   if (!resposta.ok) {
     const corpo = await resposta.json().catch(() => ({}));
-    throw new Error(corpo.erro || `erro ${resposta.status}`);
+    const erro = new Error(corpo.erro || `erro ${resposta.status}`);
+    erro.status = resposta.status;
+    throw erro;
   }
   return resposta.status === 204 ? null : resposta.json();
 }
@@ -65,7 +67,7 @@ async function atualizar() {
     const ativo = dados.jobs.some((j) => j.status === "pending" || j.status === "running");
     timer = setTimeout(atualizar, ativo ? INTERVALO : INTERVALO * 5);
   } catch (erro) {
-    if (String(erro.message).includes("autenticado")) mostrar(false);
+    if (erro.status === 401) mostrar(false);
     else timer = setTimeout(atualizar, INTERVALO * 5);
   }
 }
@@ -90,14 +92,25 @@ $("form-login").addEventListener("submit", async (evento) => {
 
 $("form-job").addEventListener("submit", async (evento) => {
   evento.preventDefault();
+  const aviso = $("erro-job");
+  aviso.hidden = true;
   const formato = document.querySelector('input[name="formato"]:checked').value;
-  await api("/api/jobs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: $("url").value, formato }),
-  });
-  $("url").value = "";
-  atualizar();
+  try {
+    await api("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: $("url").value, formato }),
+    });
+    $("url").value = "";
+    atualizar();
+  } catch (erro) {
+    if (erro.status === 401) {
+      mostrar(false);
+      return;
+    }
+    aviso.textContent = erro.message;
+    aviso.hidden = false;
+  }
 });
 
 $("arquivo-cookies").addEventListener("change", async (evento) => {
@@ -114,6 +127,10 @@ $("arquivo-cookies").addEventListener("change", async (evento) => {
     aviso.hidden = false;
     atualizar();
   } catch (erro) {
+    if (erro.status === 401) {
+      mostrar(false);
+      return;
+    }
     aviso.textContent = erro.message;
     aviso.className = "erro";
     aviso.hidden = false;

@@ -15,7 +15,7 @@
 
     <section id="tela-login" hidden>
       <form id="form-login">
-        <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" required>
+        <input type="password" id="senha" placeholder="Senha" aria-label="Senha" autocomplete="current-password" required>
         <button type="submit">Entrar</button>
       </form>
       <p class="erro" id="erro-login" hidden></p>
@@ -23,13 +23,14 @@
 
     <section id="tela-app" hidden>
       <form id="form-job">
-        <input type="url" id="url" placeholder="Cole o link do vídeo" required>
+        <input type="url" id="url" placeholder="Cole o link do vídeo" aria-label="Link do vídeo" required>
         <div class="formatos">
           <label><input type="radio" name="formato" value="video" checked> Vídeo</label>
           <label><input type="radio" name="formato" value="audio"> Áudio</label>
         </div>
         <button type="submit">Baixar</button>
       </form>
+      <p class="erro" id="erro-job" hidden></p>
 
       <ul id="lista"></ul>
 
