@@ -21,8 +21,9 @@ Dentro:
 - Download do arquivo pronto, com suporte a retomada (Range).
 - Expiração automática dos arquivos.
 - PWA instalável na home do celular.
-- Autenticação por senha única.
-- Sincronização de cookies da máquina local para a VPS.
+- Autenticação por senha única, sessão que não expira.
+- Atualização dos cookies por upload na própria UI, mais um script de atalho na
+  máquina Linux.
 
 Fora (YAGNI — cortado explicitamente):
 
@@ -39,7 +40,10 @@ Fora (YAGNI — cortado explicitamente):
 | Decisão | Razão |
 |---|---|
 | VPS, não Vercel | Serverless não roda ffmpeg com folga, tem timeout curto, disco efêmero e o egress do arquivo sairia caro. Com VPS própria a Vercel não agrega nada. |
-| Cookies da máquina local | IPs de datacenter são desafiados pelo YouTube e por outras fontes. Proxy residencial custa por GB — inviável para vídeo. Cookies do Firefox logado resolvem por um custo de manutenção baixo. |
+| Cookies do navegador logado | IPs de datacenter são desafiados pelo YouTube e por outras fontes. Proxy residencial custa por GB — inviável para vídeo. Cookies de um navegador logado resolvem por um custo de manutenção baixo. |
+| Cookies enviados por upload na UI, não por `scp` | O PC principal é Windows com Edge/Chrome, e desde a versão 127 esses navegadores cifram os cookies com App-Bound Encryption — extração por script não funciona mais. Upload de um `cookies.txt` exportado por extensão funciona em qualquer SO, e ainda dispensa chave SSH. |
+| Senha em texto puro no `.env` | VPS privada, um usuário, arquivo `600`: quem lê o arquivo já é root. Um hash não protegeria nada e só criaria fricção para trocar a senha. |
+| Sessão sem expiração | Uso pessoal: logar uma vez no celular e nunca mais. A chave de assinatura é independente da senha, então trocar a senha não desloga (decisão explícita do usuário). |
 | TTL fixo (6h) em vez de apagar no download | Tolera download interrompido sem precisar rebaixar da fonte. Um cron burro basta; não precisa detectar fim de resposta HTTP. |
 | Monolito FastAPI + SQLite | Uma peça só, yt-dlp é biblioteca Python nativa (progress hook direto), mesmo padrão do inemavox. Redis + worker separado seria over-engineering para um usuário. |
 | 1 job por vez | Uso pessoal; concorrência só aumentaria a chance de rate-limit na fonte. |
@@ -56,20 +60,23 @@ Celular/Desktop  ──HTTPS──►  Caddy (TLS automático, subdomínio)
                           ├── /api/login            senha única → cookie
                           ├── /api/jobs             POST cria, GET lista
                           ├── /api/jobs/{id}/file   entrega o arquivo
+                          ├── /api/cookies          POST recebe cookies.txt
                           └── worker asyncio        consome a fila
                                   │
                     ┌─────────────┼─────────────┐
                     ▼             ▼             ▼
               SQLite (jobs)  /data/downloads  cookies.txt
 
-Máquina local: sync-cookies.sh  ──scp──►  VPS:/data/cookies.txt
+PC Windows (Edge/Chrome) ─ extensão exporta cookies.txt ─► upload pela UI
+Máquina Linux ─ sync-cookies.sh (cron semanal) ─ curl ─► POST /api/cookies
 ```
 
 ## Componentes
 
 | Módulo | Responsabilidade | Depende de |
 |---|---|---|
-| `auth.py` | valida a senha, emite e verifica o cookie de sessão assinado | env `DLP_PASSWORD_HASH`, `DLP_SECRET_KEY` |
+| `auth.py` | valida a senha, emite e verifica o cookie de sessão assinado; valida o token do script | env `DLP_PASSWORD`, `DLP_SECRET_KEY` |
+| `cookies.py` | recebe, valida o formato Netscape e grava `cookies.txt` | filesystem |
 | `store.py` | CRUD de jobs e transições de estado no SQLite | sqlite3 |
 | `downloader.py` | executa yt-dlp para um job, reporta progresso | yt-dlp, `cookies.txt` |
 | `worker.py` | laço: pega job pendente → downloader → atualiza status | store, downloader |
@@ -101,9 +108,11 @@ Arquivos em `/data/downloads/{job_id}/`.
 
 ## Fluxo
 
-1. **Login** — POST `/api/login` com a senha; confere contra o hash em env; devolve
-   cookie `HttpOnly`, `Secure`, `SameSite=Lax`, validade 30 dias. Todo `/api/*`
-   exige o cookie.
+1. **Login** — POST `/api/login` com a senha; compara com `DLP_PASSWORD` em tempo
+   constante; devolve cookie `HttpOnly`, `Secure`, `SameSite=Lax`, **sem expiração
+   prática** (validade de 10 anos). Todo `/api/*` exige o cookie. Trocar a senha
+   não invalida sessões existentes: a assinatura usa `DLP_SECRET_KEY`, que é
+   independente.
 2. **Criar job** — POST `/api/jobs` `{url, format}`. Grava `pending`, devolve o id.
    A URL não é validada: quem decide se sabe lidar é o yt-dlp.
 3. **Worker** — laço asyncio, um job por vez: `pending` → `running` → yt-dlp com
@@ -135,18 +144,36 @@ Arquivos em `/data/downloads/{job_id}/`.
 - **Sem retry automático** em nenhum caso: em fonte bloqueada, retry só queima o IP
   mais rápido.
 
-## Sincronização de cookies
+## Atualização dos cookies
 
-`sync-cookies.sh` roda na máquina local: extrai os cookies do perfil Firefox
-`kklk8j7a.default` (mesma receita já usada para o Skool), converte para o formato
-Netscape `cookies.txt` que o yt-dlp espera, e faz `scp` para `VPS:/data/cookies.txt`.
-Execução manual quando um job falhar por bloqueio, ou por cron semanal.
+Dois caminhos para o mesmo endpoint `POST /api/cookies`, que valida o formato
+Netscape e grava `/data/cookies.txt` atomicamente (escreve `.tmp` e renomeia, para
+nunca deixar o yt-dlp ler um arquivo pela metade).
+
+**Caminho principal — upload pela UI.** No PC Windows (ou no celular), com a
+extensão *Get cookies.txt LOCALLY* no Edge/Chrome e a sessão aberta nas fontes:
+exporta o `cookies.txt` e envia pela tela "Atualizar cookies" da PWA. Autenticado
+pelo cookie de sessão. Funciona em qualquer sistema operacional e dispensa SSH.
+
+Extração por script não é possível no Windows: Chrome e Edge cifram os cookies com
+App-Bound Encryption desde a versão 127, e só o próprio processo do navegador obtém
+a chave.
+
+**Atalho — `sync-cookies.sh` na máquina Linux.** Extrai do perfil Firefox
+`kklk8j7a.default` copiando `cookies.sqlite` junto com `-wal` e `-shm` (sem os dois
+últimos, a extração pega dados antigos), converte para Netscape e envia por `curl`
+ao mesmo endpoint, autenticando com `DLP_UPLOAD_TOKEN`. Roda por **cron semanal**.
+
+A UI mostra a data da última atualização dos cookies, para o estado nunca ser
+adivinhado.
 
 ## Deploy
 
 - `docker compose`: um container da aplicação (Python + yt-dlp + ffmpeg) e o Caddy.
 - Volume `/data` persistente para SQLite, downloads e `cookies.txt`.
 - Caddy cuida do TLS automático num subdomínio.
+- Trocar a senha: editar `DLP_PASSWORD` no `.env` ao lado do `docker-compose.yml` e
+  rodar `docker compose restart`. Sessões abertas continuam válidas.
 - yt-dlp atualizado no boot do container (`pip install -U yt-dlp`), porque quebra
   com frequência quando as fontes mudam.
 
@@ -154,8 +181,9 @@ Execução manual quando um job falhar por bloqueio, ou por cron semanal.
 
 | Variável | Padrão | Uso |
 |---|---|---|
-| `DLP_PASSWORD_HASH` | — | hash da senha única |
-| `DLP_SECRET_KEY` | — | assinatura do cookie de sessão |
+| `DLP_PASSWORD` | — | senha única, texto puro no `.env` (modo `600`) |
+| `DLP_SECRET_KEY` | — | assinatura do cookie de sessão; gerada na instalação |
+| `DLP_UPLOAD_TOKEN` | — | autentica o `sync-cookies.sh` no `POST /api/cookies`; gerado na instalação |
 | `DLP_TTL_HOURS` | `6` | validade do arquivo baixado |
 | `DLP_DATA_DIR` | `/data` | raiz de dados |
 
@@ -165,7 +193,10 @@ Execução manual quando um job falhar por bloqueio, ou por cron semanal.
   integração marcado, contra um vídeo curto e estável (Big Buck Bunny).
 - `store` — CRUD e transições de estado em SQLite temporário.
 - `reaper` — relógio injetado: apaga o que passou do TTL, preserva o resto.
-- `auth` — senha certa e errada, cookie forjado, rota protegida sem cookie.
+- `auth` — senha certa e errada, cookie forjado, rota protegida sem cookie, token de
+  upload certo e errado.
+- `cookies` — aceita um `cookies.txt` Netscape válido, rejeita lixo, e a gravação é
+  atômica (o arquivo antigo sobrevive se a validação falhar).
 - `api` — TestClient do FastAPI: criar → listar → baixar, com downloader falso.
 
 Sem teste automatizado de UI: é uma tela só, verificação manual basta.
