@@ -2,7 +2,7 @@
 
 import hmac
 
-from itsdangerous import BadSignature, URLSafeSerializer
+from itsdangerous import BadData, URLSafeSerializer
 
 SESSION_COOKIE = "inemadlp_session"
 SESSION_MAX_AGE = 315_360_000  # 10 anos: na prática a sessão não expira
@@ -27,7 +27,7 @@ def is_valid_session(valor: str | None, secret_key: str) -> bool:
         return False
     try:
         return _serializer(secret_key).loads(valor) == _PAYLOAD
-    except BadSignature:
+    except BadData:
         return False
 
 

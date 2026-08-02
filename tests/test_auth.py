@@ -1,3 +1,5 @@
+import base64
+
 from inemadlp import auth
 
 CHAVE = "chave-secreta"
@@ -35,3 +37,23 @@ def test_upload_token():
 
 def test_session_lasts_ten_years():
     assert auth.SESSION_MAX_AGE == 315_360_000
+
+
+def test_corrupted_payload_in_session_is_rejected():
+    """Teste que valida se payload corrompido (BadPayload) retorna False.
+
+    Constrói um token com payload inválido (JSON mal formado) mas assinado
+    corretamente, forçando BadPayload em vez de BadSignature.
+    """
+    from itsdangerous import URLSafeSerializer
+
+    serializer = URLSafeSerializer(CHAVE, salt=auth._SALT)
+    signer = serializer.make_signer()
+
+    # Cria um payload que é base64 válido mas JSON inválido
+    invalid_json = base64.urlsafe_b64encode(b"{invalid").rstrip(b"=").decode()
+    signed_token = signer.sign(invalid_json).decode() if isinstance(signer.sign(invalid_json), bytes) else signer.sign(invalid_json)
+
+    # Este token tem assinatura válida mas payload que não pode ser desserializado
+    # Deve retornar False (não lançar BadPayload)
+    assert auth.is_valid_session(signed_token, CHAVE) is False
