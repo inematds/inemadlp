@@ -337,6 +337,14 @@ Um arquivo `cookies.txt` cai na sua pasta de Downloads. Ele começa com a linha
 `# Netscape HTTP Cookie File` — o inemadlp recusa o arquivo se essa linha não
 estiver lá, justamente porque o yt-dlp também recusaria.
 
+O inemadlp também aceita o export em **JSON** que algumas versões dessa (e de
+outras) extensões oferecem — se a página de exportação te der a escolher entre
+`cookies.txt` e JSON, **prefira `cookies.txt`**: é o formato que o yt-dlp lê
+nativamente, então há uma etapa de conversão a menos e menos chance de erro. Se
+o painel recusar o arquivo, a mensagem agora explica o motivo (JSON malformado,
+página HTML salva por engano, campos separados por espaço em vez de TAB,
+arquivo vazio etc.) e o que fazer para corrigir.
+
 **4. Enviar para o inemadlp**
 
 1. abra `https://seu-dominio` (no PC mesmo, é mais fácil que no celular);

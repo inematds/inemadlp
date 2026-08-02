@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from yt_dlp.cookies import YoutubeDLCookieJar
 
@@ -126,6 +128,97 @@ def test_save_drops_line_with_non_numeric_expiry(tmp_path):
     jar = YoutubeDLCookieJar(str(destino))
     jar.load(ignore_discard=True, ignore_expires=True)
     assert {c.name for c in jar} == {"SID"}
+
+
+def test_save_accepts_json_array_export(tmp_path):
+    destino = tmp_path / "cookies.txt"
+    dados_json = json.dumps(
+        [
+            {
+                "domain": ".youtube.com",
+                "name": "SID",
+                "value": "abc123",
+                "path": "/",
+                "secure": True,
+                "httpOnly": True,
+                "expirationDate": 1800000000.5,
+            },
+            {
+                "domain": "www.youtube.com",
+                "name": "VISIT",
+                "value": "xyz",
+                "path": "/",
+                "secure": False,
+                "httpOnly": False,
+                "expirationDate": 1800000001,
+            },
+            {
+                "domain": ".youtube.com",
+                "name": "SESSIONID",
+                "value": "sess",
+                "path": "/",
+                "secure": True,
+                "httpOnly": False,
+            },
+        ]
+    )
+    resultado = cookies.save(dados_json, destino)
+    assert resultado.cookies == 3
+
+    jar = YoutubeDLCookieJar(str(destino))
+    jar.load(ignore_discard=True, ignore_expires=True)
+    nomes = {c.name for c in jar}
+    assert nomes == {"SID", "VISIT", "SESSIONID"}
+
+
+def test_save_accepts_json_object_with_cookies_key(tmp_path):
+    destino = tmp_path / "cookies.txt"
+    dados_json = json.dumps(
+        {
+            "cookies": [
+                {"domain": ".youtube.com", "name": "SID", "value": "abc123"},
+                {"domain": ".youtube.com", "name": "HSID", "value": "def456", "httpOnly": True},
+            ]
+        }
+    )
+    resultado = cookies.save(dados_json, destino)
+    assert resultado.cookies == 2
+
+    jar = YoutubeDLCookieJar(str(destino))
+    jar.load(ignore_discard=True, ignore_expires=True)
+    assert {c.name for c in jar} == {"SID", "HSID"}
+
+
+def test_save_rejects_malformed_json(tmp_path):
+    destino = tmp_path / "cookies.txt"
+    with pytest.raises(cookies.InvalidCookieFile, match="JSON"):
+        cookies.save('[{"domain": ".x.com", "name": "A"', destino)
+    assert not destino.exists()
+
+
+def test_save_rejects_html_page(tmp_path):
+    destino = tmp_path / "cookies.txt"
+    with pytest.raises(cookies.InvalidCookieFile, match="HTML"):
+        cookies.save("<!DOCTYPE html><html><body>login</body></html>", destino)
+    assert not destino.exists()
+
+
+def test_save_rejects_space_separated_fields(tmp_path):
+    destino = tmp_path / "cookies.txt"
+    conteudo = (
+        "# Netscape HTTP Cookie File\n"
+        ".youtube.com TRUE / TRUE 1800000000 SID abc123\n"
+    )
+    with pytest.raises(cookies.InvalidCookieFile, match="TAB"):
+        cookies.save(conteudo, destino)
+    assert not destino.exists()
+
+
+def test_save_rejects_empty_content(tmp_path):
+    destino = tmp_path / "cookies.txt"
+    with pytest.raises(cookies.InvalidCookieFile, match="vazio"):
+        cookies.save("   \n\n", destino)
+    assert not destino.exists()
 
 
 def test_save_all_lines_unusable_raises_and_keeps_previous_file(tmp_path):
