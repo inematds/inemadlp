@@ -132,10 +132,14 @@ def create_app(settings: Settings, store: Store, start_worker: bool = True) -> F
             raise HTTPException(status_code=400, detail="arquivo ausente ou inválido")
         conteudo = (await arquivo.read()).decode("utf-8", errors="replace")
         try:
-            total = cookies.save(conteudo, settings.cookies_path)
+            resultado = cookies.save(conteudo, settings.cookies_path)
         except cookies.InvalidCookieFile as erro:
             raise HTTPException(status_code=400, detail=str(erro)) from erro
-        return {"cookies": total}
+        return {
+            "cookies": resultado.cookies,
+            "corrigidos": resultado.corrigidos,
+            "descartados": resultado.descartados,
+        }
 
     @app.exception_handler(HTTPException)
     async def erro_em_json(request: Request, exc: HTTPException):

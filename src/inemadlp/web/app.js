@@ -122,7 +122,10 @@ $("arquivo-cookies").addEventListener("change", async (evento) => {
   dados.append("arquivo", arquivo);
   try {
     const resultado = await api("/api/cookies", { method: "POST", body: dados });
-    aviso.textContent = `${resultado.cookies} cookies enviados.`;
+    const detalhes = [];
+    if (resultado.corrigidos) detalhes.push(`${resultado.corrigidos} corrigido${resultado.corrigidos === 1 ? "" : "s"}`);
+    if (resultado.descartados) detalhes.push(`${resultado.descartados} descartado${resultado.descartados === 1 ? "" : "s"}`);
+    aviso.textContent = `${resultado.cookies} cookies enviados${detalhes.length ? ` (${detalhes.join(", ")})` : ""}.`;
     aviso.className = "ok";
     aviso.hidden = false;
     atualizar();

@@ -1,4 +1,5 @@
 import pytest
+from yt_dlp.cookies import YoutubeDLCookieJar
 
 from inemadlp import cookies
 
@@ -9,10 +10,18 @@ VALIDO = (
     "\n"
 )
 
+# Linha exata do bug reportado: domínio com ponto inicial mas domain_specified=FALSE.
+# http.cookiejar._really_load assert domain_specified == initial_dot, e isso derruba
+# o carregamento do arquivo INTEIRO (não só essa linha).
+LINHA_BUG_MSN = ".assets.msn.com\tFALSE\t/service/segments/recoitems\tFALSE\t0\t_C_Auth\t"
+
 
 def test_save_writes_and_counts(tmp_path):
     destino = tmp_path / "cookies.txt"
-    assert cookies.save(VALIDO, destino) == 2
+    resultado = cookies.save(VALIDO, destino)
+    assert resultado.cookies == 2
+    assert resultado.corrigidos == 0
+    assert resultado.descartados == 0
     assert destino.read_text() == VALIDO
 
 
@@ -52,10 +61,84 @@ def test_last_updated(tmp_path):
 def test_save_rejects_missing_netscape_header(tmp_path):
     """Isolates the header requirement: valid 7-field cookie line without header must be rejected."""
     destino = tmp_path / "cookies.txt"
-    # Perfectly well-formed Netscape cookie format (7 TAB-separated fields)
-    # but WITHOUT the required "# Netscape HTTP Cookie File" header line.
-    # This input would have been accepted by the pre-fix code.
     sem_cabecalho = ".youtube.com\tTRUE\t/\tTRUE\t1800000000\tSID\tabc123\n"
     with pytest.raises(cookies.InvalidCookieFile):
         cookies.save(sem_cabecalho, destino)
     assert not destino.exists()
+
+
+def test_save_repairs_bug_line_and_result_loads_cleanly(tmp_path):
+    """A linha exata do bug relatado, misturada com bons cookies do YouTube: antes do fix
+    era aceita crua e derrubava o carregamento inteiro no yt-dlp; depois do fix deve ser
+    reparada (domain_specified -> TRUE) e o arquivo salvo deve carregar sem erro."""
+    destino = tmp_path / "cookies.txt"
+    conteudo = (
+        "# Netscape HTTP Cookie File\n"
+        ".youtube.com\tTRUE\t/\tTRUE\t1800000000\tSID\tabc123\n"
+        "#HttpOnly_.youtube.com\tTRUE\t/\tTRUE\t1800000000\tHSID\tdef456\n"
+        f"{LINHA_BUG_MSN}\n"
+    )
+    resultado = cookies.save(conteudo, destino)
+    assert resultado.cookies == 3
+    assert resultado.corrigidos == 1
+    assert resultado.descartados == 0
+
+    # A prova que importa: o arquivo salvo carrega sem lançar exceção no yt-dlp.
+    jar = YoutubeDLCookieJar(str(destino))
+    jar.load(ignore_discard=True, ignore_expires=True)
+    dominios = {c.domain for c in jar}
+    assert ".assets.msn.com" in dominios
+    assert ".youtube.com" in dominios
+
+
+def test_save_repairs_domain_without_dot_and_true_flag(tmp_path):
+    """Domínio SEM ponto inicial mas com domain_specified=TRUE é reparado no sentido oposto."""
+    destino = tmp_path / "cookies.txt"
+    conteudo = (
+        "# Netscape HTTP Cookie File\n"
+        "exemplo.com\tTRUE\t/\tFALSE\t1800000000\tFOO\tbar\n"
+    )
+    resultado = cookies.save(conteudo, destino)
+    assert resultado.cookies == 1
+    assert resultado.corrigidos == 1
+    assert resultado.descartados == 0
+    assert "exemplo.com\tFALSE\t/\tFALSE\t1800000000\tFOO\tbar" in destino.read_text()
+
+    jar = YoutubeDLCookieJar(str(destino))
+    jar.load(ignore_discard=True, ignore_expires=True)
+    assert {c.domain for c in jar} == {"exemplo.com"}
+
+
+def test_save_drops_line_with_non_numeric_expiry(tmp_path):
+    """Linha com expiry não-numérico é descartada; o resto sobrevive e a contagem reflete isso."""
+    destino = tmp_path / "cookies.txt"
+    conteudo = (
+        "# Netscape HTTP Cookie File\n"
+        ".youtube.com\tTRUE\t/\tTRUE\t1800000000\tSID\tabc123\n"
+        ".ruim.com\tTRUE\t/\tTRUE\tnao-e-numero\tBAD\tvalor\n"
+    )
+    resultado = cookies.save(conteudo, destino)
+    assert resultado.cookies == 1
+    assert resultado.descartados == 1
+    assert "BAD" not in destino.read_text()
+    assert "SID" in destino.read_text()
+
+    jar = YoutubeDLCookieJar(str(destino))
+    jar.load(ignore_discard=True, ignore_expires=True)
+    assert {c.name for c in jar} == {"SID"}
+
+
+def test_save_all_lines_unusable_raises_and_keeps_previous_file(tmp_path):
+    """Arquivo cujas linhas são TODAS inutilizáveis levanta InvalidCookieFile e não toca
+    num cookies.txt anterior já existente."""
+    destino = tmp_path / "cookies.txt"
+    cookies.save(VALIDO, destino)
+
+    conteudo_ruim = (
+        "# Netscape HTTP Cookie File\n"
+        "campo1\tcampo2\tcampo3\n"  # menos de 7 campos
+        ".outro.com\tTRUE\t/\tTRUE\tnao-numero\tX\tY\n"  # expiry não-numérico
+    )
+    with pytest.raises(cookies.InvalidCookieFile):
+        cookies.save(conteudo_ruim, destino)
+    assert destino.read_text() == VALIDO

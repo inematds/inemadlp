@@ -15,6 +15,7 @@ COOKIES_EXPIRED_MARKERS = (
     "--cookies",
     "rate-limit reached",
     "does not look like a netscape format",
+    "invalid netscape format cookies file",
 )
 
 _FORMATOS = {
