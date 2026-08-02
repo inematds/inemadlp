@@ -12,7 +12,8 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     environment:
-      DLP_DOMAIN: ${DLP_DOMAIN}
+      # falha alto e claro se faltar, em vez de servir num host vazio e nunca emitir certificado
+      DLP_DOMAIN: "${DLP_DOMAIN:?defina DLP_DOMAIN no .env, por exemplo dlp.seudominio.com}"
     ports:
       - "80:80"
       - "443:443"
