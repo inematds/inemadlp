@@ -188,6 +188,14 @@ def save(conteudo: str, destino: Path) -> SaveResult:
     )
     if total == 0:
         examinadas = sum(1 for linha in linhas if linha.strip() and not linha.strip().startswith("#"))
+        if examinadas == 0:
+            # o export rodou, mas não capturou cookie nenhum: só o cabeçalho veio
+            raise InvalidCookieFile(
+                "o arquivo só tem o cabeçalho, sem nenhuma linha de cookie — a "
+                "exportação não capturou nada. Exporte de novo com a aba do site "
+                "aberta e já logada (a sua foto de perfil visível), e confira se a "
+                "extensão não está limitada a um site diferente"
+            )
         raise InvalidCookieFile(
             f"nenhum cookie aproveitável encontrado ({examinadas} linha(s) "
             "examinada(s) e descartada(s) por não terem os 7 campos esperados ou "

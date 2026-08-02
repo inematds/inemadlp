@@ -235,3 +235,17 @@ def test_save_all_lines_unusable_raises_and_keeps_previous_file(tmp_path):
     with pytest.raises(cookies.InvalidCookieFile):
         cookies.save(conteudo_ruim, destino)
     assert destino.read_text() == VALIDO
+
+
+def test_save_rejects_header_only_export(tmp_path):
+    """Export que rodou mas nao capturou nada: so o cabecalho veio."""
+    so_cabecalho = (
+        "# Netscape HTTP Cookie File\n"
+        "# https://curl.haxx.se/rfc/cookie_spec.html\n"
+        "# This is a generated file! Do not edit.\n"
+    )
+    with pytest.raises(cookies.InvalidCookieFile) as erro:
+        cookies.save(so_cabecalho, tmp_path / "cookies.txt")
+    mensagem = str(erro.value)
+    assert "só tem o cabeçalho" in mensagem
+    assert "logada" in mensagem
