@@ -175,23 +175,17 @@ dlp.seudominio  A  <span class="s">203.0.113.10</span></pre></div>
   <p class="sub">São cinco passos. Do terceiro em diante você já está usando pelo celular.</p>
 
   <div class="step"><div class="b">1</div><div>
-    <h3>Clonar e configurar</h3>
-    <p>O <code>.env</code> guarda a senha e as chaves. Ele nunca vai para o git.</p>
+    <h3>Clonar e rodar o instalador</h3>
+    <p>Ele gera os três segredos, escreve o <code>.env</code> com a permissão certa, sobe os containers e imprime a sua senha no fim.</p>
 <pre><span class="k">git clone https://github.com/inematds/inemadlp.git &amp;&amp; cd inemadlp</span>
-<span class="k">cp .env.example .env</span>
-
-<span class="c"># gere a senha e as duas chaves (uma linha cada)</span>
-<span class="k">python3 -c "import secrets; print(secrets.token_urlsafe(24))"</span>  <span class="c"># DLP_PASSWORD</span>
-<span class="k">python3 -c "import secrets; print(secrets.token_urlsafe(32))"</span>  <span class="c"># DLP_SECRET_KEY</span>
-<span class="k">python3 -c "import secrets; print(secrets.token_urlsafe(32))"</span>  <span class="c"># DLP_UPLOAD_TOKEN</span></pre>
+<span class="k">./instalar.sh dlp.seudominio</span>  <span class="c"># avisa se o DNS ainda não aponta pra cá</span></pre>
   </div></div>
 
   <div class="step"><div class="b">2</div><div>
-    <h3>Subir</h3>
-    <p>Preencha o <code>.env</code> com os valores acima e o seu domínio, proteja o arquivo e suba. O HTTPS é automático.</p>
-<pre><span class="k">echo "DLP_DOMAIN=dlp.seudominio" &gt;&gt; .env</span>
-<span class="k">chmod 600 .env</span>
-<span class="k">docker compose up --build -d</span>  <span class="c"># Caddy emite o certificado sozinho</span></pre>
+    <h3>Esperar o certificado</h3>
+    <p>O Caddy pede o certificado no primeiro acesso — de 10 a 60 segundos. Prefere fazer à mão em vez do instalador? O <a href="https://github.com/inematds/inemadlp#readme">README</a> tem o caminho manual.</p>
+<pre><span class="k">docker compose logs -f caddy</span>   <span class="c"># espere "certificate obtained"</span>
+<span class="k">curl -I https://dlp.seudominio</span>  <span class="c"># HTTP/2 200 = no ar</span></pre>
   </div></div>
 
   <div class="step"><div class="b">3</div><div>
@@ -203,7 +197,15 @@ dlp.seudominio  A  <span class="s">203.0.113.10</span></pre></div>
 
   <div class="step"><div class="b">4</div><div>
     <h3>Enviar os cookies</h3>
-    <p>Logado na fonte, exporte com a extensão <em>Get cookies.txt LOCALLY</em> e mande o arquivo no painel <strong>Cookies</strong> da própria interface. Funciona do Windows, do Linux e do celular.</p>
+    <p>Sem isso o YouTube recusa: o IP da VPS é de datacenter. No PC, com o Edge ou o Chrome <strong>logado no YouTube</strong>:</p>
+    <ol style="color:var(--mut);margin:.2em 0 .9em;padding-left:1.2em">
+      <li>instale a extensão <strong>Get cookies.txt LOCALLY</strong> (uma vez só);</li>
+      <li>abra o YouTube e confirme que sua foto de perfil aparece;</li>
+      <li>clique no ícone da extensão → <strong>Export</strong> — baixa um <code>cookies.txt</code>;</li>
+      <li>no inemadlp, abra o painel <strong>Cookies</strong> e envie esse arquivo;</li>
+      <li>apague o <code>cookies.txt</code> da pasta Downloads — ele dá acesso à sua conta.</li>
+    </ol>
+    <p>Refaça só quando um download falhar: a interface avisa <em>"cookies expirados"</em>.</p>
 <pre><span class="c"># atalho, só na máquina Linux com Firefox logado</span>
 <span class="k">DLP_URL=https://dlp.seudominio DLP_UPLOAD_TOKEN=... ./sync-cookies.sh</span>
 <span class="c"># -&gt; {"cookies": 81}</span></pre>

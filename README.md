@@ -107,6 +107,30 @@ dig +short dlp.seudominio    # tem que responder o IP da VPS
 
 Tudo abaixo roda **dentro da VPS**, via `ssh`.
 
+### Caminho rápido: o instalador
+
+Faz tudo — gera os três segredos, escreve o `.env` com a permissão certa, sobe os
+containers e imprime a senha no fim:
+
+```bash
+ssh usuario@203.0.113.10
+
+git clone https://github.com/inematds/inemadlp.git
+cd inemadlp
+./instalar.sh dlp.seudominio
+```
+
+Ele avisa se o DNS ainda não aponta para a máquina, normaliza o domínio se você
+colar com `https://` por engano, e se já existir um `.env` pergunta antes de
+mexer (ajustando só o domínio, sem trocar a sua senha). Se rodar de novo depois,
+ele também detecta e conserta linhas `DLP_DOMAIN` duplicadas.
+
+Depois dele, pule para [Depois que subiu](#depois-que-subiu-o-primeiro-download).
+
+### Caminho manual
+
+Se preferir fazer à mão, ou entender cada peça:
+
 ### 1. Entrar na VPS e clonar
 
 ```bash
@@ -147,6 +171,11 @@ DLP_TTL_HOURS=6
 DLP_DATA_DIR=/data
 DLP_DOMAIN=dlp.seudominio
 ```
+
+> **Edite a linha `DLP_DOMAIN` que já existe** — não acrescente outra com
+> `echo ... >> .env`. Com duas linhas iguais o Docker usa a última, e o Caddy
+> acaba pedindo certificado para o domínio errado. O sintoma é o site não abrir
+> por erro de certificado, com tudo o mais aparentemente certo.
 
 Proteja o arquivo — ele tem os três segredos em texto puro:
 
@@ -268,24 +297,92 @@ você precisa enfileirar de novo. Se quiser mais tempo, mude `DLP_TTL_HOURS` no
 
 ## Cookies
 
-**Caminho principal:** exporte com a extensão *Get cookies.txt LOCALLY*
-(Edge/Chrome), estando logado na fonte, e envie pelo painel "Cookies" da própria
-interface. Funciona do Windows, do Linux e do celular.
+### Por que isso é necessário
 
-Não dá para automatizar isso no Windows: o Edge e o Chrome cifram os cookies com
-App-Bound Encryption desde a versão 127, e só o próprio navegador consegue a
-chave. Por isso o upload é o caminho, e não um script.
+O YouTube (e Instagram, TikTok…) desconfia de conexões vindas de datacenters. A
+sua VPS é um datacenter. Sem cookies, o download falha com um recado do tipo
+*"Sign in to confirm you're not a bot"*.
 
-**Quando renovar:** quando um download falhar. A interface avisa
-*"cookies expirados"* quando reconhece o motivo, então você não precisa
-adivinhar. Na prática os cookies do YouTube duram semanas; Instagram e TikTok
-quebram mais rápido.
+Os cookies são a prova de que existe uma conta logada por trás. Você tira eles do
+**seu navegador**, onde você já está logado, e entrega para a VPS usar.
 
-**Atalho na máquina Linux** com Firefox logado — cron semanal, para quase nunca
-ver o erro:
+Cookies **não são a sua senha**. São a sua sessão já aberta. Ainda assim, quem
+tiver o arquivo entra na sua conta — por isso ele só vive dentro da sua VPS,
+protegido pela senha do inemadlp.
+
+### Passo a passo (Windows, Edge ou Chrome)
+
+**1. Instalar a extensão** — uma vez só.
+
+Procure na loja de extensões por **Get cookies.txt LOCALLY** e instale. É open
+source e funciona offline: ela lê os cookies do próprio navegador e gera um
+arquivo, sem mandar nada para lugar nenhum.
+
+- Chrome: https://chromewebstore.google.com/ → busque pelo nome
+- Edge: instala igual, a partir da mesma loja do Chrome
+
+**2. Abrir o site e confirmar que está logado**
+
+Vá em `https://www.youtube.com` e veja se a sua foto de perfil aparece no canto
+superior direito. Se não estiver logado, faça login. **Este passo é o que
+importa** — a extensão só copia o que existe naquele momento.
+
+**3. Exportar**
+
+Ainda na aba do YouTube, clique no ícone da extensão (talvez precise clicar na
+peça de quebra-cabeça 🧩 para achá-la) e escolha **Export** (ou *Export as*
+→ `cookies.txt`).
+
+Um arquivo `cookies.txt` cai na sua pasta de Downloads. Ele começa com a linha
+`# Netscape HTTP Cookie File` — o inemadlp recusa o arquivo se essa linha não
+estiver lá, justamente porque o yt-dlp também recusaria.
+
+**4. Enviar para o inemadlp**
+
+1. abra `https://seu-dominio` (no PC mesmo, é mais fácil que no celular);
+2. entre com a senha, se pedir;
+3. lá embaixo, clique em **Cookies** para abrir o painel;
+4. clique em escolher arquivo e selecione o `cookies.txt` que acabou de baixar;
+5. o painel responde com a quantidade de cookies recebidos e passa a mostrar a
+   data do envio.
+
+Pronto. Agora é só enfileirar um link.
+
+**5. Apagar o arquivo baixado**
+
+O `cookies.txt` na sua pasta de Downloads dá acesso à sua conta. Depois de
+enviar, apague.
+
+### Quando refazer isso
+
+Só quando um download falhar. A interface diz *"cookies expirados — envie um
+cookies.txt novo"* quando reconhece o motivo, então você não fica adivinhando.
+
+Na prática: YouTube dura semanas, às vezes meses. Instagram e TikTok quebram bem
+mais rápido. Repita os passos 2 a 5 e reenfileire o link — não existe
+retentativa automática.
+
+### Por que não dá para automatizar no Windows
+
+O Edge e o Chrome passaram a cifrar os cookies com App-Bound Encryption a partir
+da versão 127: só o próprio processo do navegador consegue a chave. Nenhum script
+externo lê aqueles cookies, por mais permissão que tenha. Por isso o caminho é
+exportar pela extensão.
+
+### Atalho, só se você usa Firefox no Linux
+
+O Firefox guarda os cookies sem essa cifragem, então dá para automatizar. Na
+máquina Linux com o Firefox logado:
+
+```bash
+# pegue o token na VPS:  grep DLP_UPLOAD_TOKEN .env
+DLP_URL=https://seu-dominio DLP_UPLOAD_TOKEN=<token> ./sync-cookies.sh
+```
+
+E, se quiser nunca mais ver o erro, um cron semanal:
 
 ```cron
-0 9 * * 1 DLP_URL=https://dlp.seudominio DLP_UPLOAD_TOKEN=... /caminho/para/inemadlp/sync-cookies.sh
+0 9 * * 1 DLP_URL=https://seu-dominio DLP_UPLOAD_TOKEN=<token> /caminho/para/inemadlp/sync-cookies.sh
 ```
 
 ---
