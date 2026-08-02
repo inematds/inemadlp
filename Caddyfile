@@ -1,0 +1,10 @@
+{$DLP_DOMAIN} {
+	reverse_proxy app:8000 {
+		# Vídeos grandes: sem timeout de leitura na entrega do arquivo.
+		flush_interval -1
+	}
+	request_body {
+		max_size 10MB
+	}
+	encode gzip
+}

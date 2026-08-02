@@ -13,3 +13,22 @@ Atalho na máquina Linux com Firefox logado — cron semanal:
 ```cron
 0 9 * * 1 DLP_URL=https://dlp.seudominio DLP_UPLOAD_TOKEN=... /home/nmaldaner/projetos/inemadlp/sync-cookies.sh
 ```
+
+## Deploy na VPS
+
+```bash
+git clone <repo> inemadlp && cd inemadlp
+cp .env.example .env
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"   # DLP_SECRET_KEY
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"   # DLP_UPLOAD_TOKEN
+# editar o .env: DLP_PASSWORD, as duas chaves acima
+chmod 600 .env
+echo "DLP_DOMAIN=dlp.seudominio" >> .env
+docker compose up --build -d
+```
+
+Aponte o DNS do subdomínio para o IP da VPS antes de subir: o Caddy emite o
+certificado sozinho no primeiro acesso.
+
+Trocar a senha: editar `DLP_PASSWORD` no `.env` e rodar `docker compose restart app`.
+As sessões já abertas continuam válidas.
