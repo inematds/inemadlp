@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.datastructures import UploadFile as StarletteUploadFile
 
-from inemadlp import auth, cookies, downloader, worker
+from inemadlp import __version__, auth, cookies, downloader, worker
 from inemadlp.config import Settings, load_settings
 from inemadlp.store import READY, Job, Store
 
@@ -88,7 +88,7 @@ def create_app(settings: Settings, store: Store, start_worker: bool = True) -> F
 
     @app.get("/api/session")
     def sessao(request: Request):
-        return {"autenticado": sessao_valida(request)}
+        return {"autenticado": sessao_valida(request), "versao": __version__}
 
     @app.get("/api/jobs", dependencies=[Depends(exigir_sessao)])
     def listar():

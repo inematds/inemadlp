@@ -90,3 +90,5 @@ a.baixar {
   color: var(--suave);
   width: auto;
 }
+
+#versao { font-size: 0.75rem; text-align: center; }

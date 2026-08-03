@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+import inemadlp
 from inemadlp.api import create_app
 from inemadlp.config import load_settings
 from inemadlp.store import Store
@@ -51,9 +52,15 @@ def test_api_requires_session(ambiente):
 
 def test_session_endpoint_reports_state(ambiente):
     cliente, _, _ = ambiente
-    assert cliente.get("/api/session").json() == {"autenticado": False}
+    assert cliente.get("/api/session").json()["autenticado"] is False
     cliente.post("/api/login", json={"senha": SENHA})
-    assert cliente.get("/api/session").json() == {"autenticado": True}
+    assert cliente.get("/api/session").json()["autenticado"] is True
+
+
+def test_session_endpoint_reports_version(ambiente):
+    cliente, _, _ = ambiente
+    resposta = cliente.get("/api/session").json()
+    assert resposta["versao"] == inemadlp.__version__
 
 
 def test_logout_clears_session(logado):

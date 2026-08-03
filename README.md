@@ -18,8 +18,10 @@ Guia completo (landing + passo a passo): **https://inematds.github.io/inemadlp/g
 4. [Acesso remoto e portas](#acesso-remoto-e-portas)
 5. [Depois que subiu: o primeiro download](#depois-que-subiu-o-primeiro-download)
 6. [Cookies](#cookies)
-7. [Operação do dia a dia](#operação-do-dia-a-dia)
-8. [Quando algo dá errado](#quando-algo-dá-errado)
+7. [Transcrição (em desenvolvimento)](#transcrição-em-desenvolvimento)
+8. [Atualizar](#atualizar)
+9. [Operação do dia a dia](#operação-do-dia-a-dia)
+10. [Quando algo dá errado](#quando-algo-dá-errado)
 
 ---
 
@@ -398,6 +400,68 @@ E, se quiser nunca mais ver o erro, um cron semanal:
 ```cron
 0 9 * * 1 DLP_URL=https://seu-dominio DLP_UPLOAD_TOKEN=<token> /caminho/para/inemadlp/sync-cookies.sh
 ```
+
+---
+
+## Transcrição (em desenvolvimento)
+
+Está sendo construída uma terceira opção, ao lado de Vídeo e Áudio: **Transcrição**,
+usando o Whisper na API da Groq. O texto aparece na própria tela, com botão de
+copiar, e também como `.txt` para baixar. Jobs de vídeo e áudio já prontos ganham
+um botão **Transcrever** que reaproveita o arquivo já baixado, sem tocar na fonte
+de novo.
+
+**Limitação conhecida, por decisão de projeto: vídeos longos ficam de fora.**
+
+A API de transcrição da Groq aceita no máximo **25 MB por arquivo**. Reamostrando
+para 16 kHz mono — o formato que o Whisper usa internamente, sem perda para fala —
+isso equivale a mais ou menos **50 minutos de áudio**.
+
+Acima disso o job é **recusado com um aviso** dizendo a duração do áudio e o limite,
+sem gastar chamada à API. Não há fatiamento automático: seria possível cortar o
+áudio em pedaços e emendar o texto, mas isso foi deliberadamente deixado de fora
+para manter a coisa simples. Aula longa e podcast, portanto, não são transcritos
+aqui — para esses, use o inemavox.
+
+Exige `GROQ_API_KEY` no `.env`. Sem a chave, a opção não aparece na interface.
+
+Outros limites da Groq, para referência: 7.200 segundos de áudio e 2.000
+requisições por janela de cota. O modelo `whisper-large-v3-turbo` custa em torno de
+US$ 0,04 por hora de áudio.
+
+---
+
+## Atualizar
+
+Na VPS, um comando:
+
+```bash
+cd inemadlp
+./atualizar.sh
+```
+
+Ele traz o código novo, reconstrói a imagem, recria os containers e confere se o
+site voltou a responder. Antes de tudo isso, se houver edições locais não
+commitadas, ele **avisa e pergunta** — e o que guardar vai para o `git stash`, de
+onde você recupera com `git stash pop`. O `.env` nunca é tocado: senha, chaves,
+cookies e arquivos baixados continuam onde estão.
+
+Se o histórico local tiver divergido do remoto, ele para em vez de criar um merge
+silencioso, e diz como resolver.
+
+À mão, se preferir:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+O `--build` é obrigatório — sem ele o Docker reaproveita a imagem antiga e a
+atualização não tem efeito nenhum.
+
+Depois de atualizar, a versão aparece discretamente no rodapé da interface
+(`inemadlp vX.Y.Z`) — basta abrir o site e conferir se bate com a versão nova
+antes de considerar a VPS atualizada.
 
 ---
 

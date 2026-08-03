@@ -147,4 +147,7 @@ $("sair").addEventListener("click", async () => {
   mostrar(false);
 });
 
-api("/api/session").then((dados) => mostrar(dados.autenticado));
+api("/api/session").then((dados) => {
+  mostrar(dados.autenticado);
+  $("versao").textContent = `inemadlp v${dados.versao}`;
+});
