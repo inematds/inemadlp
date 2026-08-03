@@ -39,6 +39,7 @@ class Job:
     size: int | None
     error: str | None
     created_at: int
+    origem: str | None = None
 
 
 class Store:
@@ -47,6 +48,10 @@ class Store:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._conn() as conn:
             conn.execute(_SCHEMA)
+            try:
+                conn.execute("ALTER TABLE jobs ADD COLUMN origem TEXT")
+            except sqlite3.OperationalError:
+                pass  # coluna já existe: banco criado por uma versão anterior
 
     def _conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self._path, isolation_level=None)
@@ -58,13 +63,13 @@ class Store:
     def _row_to_job(row: sqlite3.Row) -> Job:
         return Job(**{campo: row[campo] for campo in Job.__dataclass_fields__})
 
-    def create(self, url: str, fmt: str, now: int) -> Job:
+    def create(self, url: str, fmt: str, now: int, origem: str | None = None) -> Job:
         job_id = str(uuid.uuid4())
         with self._conn() as conn:
             conn.execute(
-                "INSERT INTO jobs (id, url, format, status, progress, created_at)"
-                " VALUES (?, ?, ?, ?, 0, ?)",
-                (job_id, url, fmt, PENDING, now),
+                "INSERT INTO jobs (id, url, format, status, progress, created_at, origem)"
+                " VALUES (?, ?, ?, ?, 0, ?, ?)",
+                (job_id, url, fmt, PENDING, now, origem),
             )
         return self.get(job_id)
 

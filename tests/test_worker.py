@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 from pathlib import Path
 
 import pytest
@@ -151,6 +152,149 @@ def test_run_forever_survives_failing_iteration(ambiente):
 
     asyncio.run(cenario())
     assert chamadas["n"] >= 2
+
+
+@pytest.fixture
+def ambiente_com_groq(ambiente):
+    store, settings = ambiente
+    return store, dataclasses.replace(settings, groq_api_key="chave-fake")
+
+
+def _convert_falso(origem, destino):
+    Path(destino).write_bytes(b"0" * 1000)  # bem abaixo do limite
+
+
+def _transcribe_falso(caminho, api_key):
+    return "texto transcrito"
+
+
+def test_transcricao_reusa_arquivo_de_origem_sem_baixar(ambiente_com_groq):
+    store, settings = ambiente_com_groq
+    fonte = store.create("https://a", "video", now=1000)
+    store.claim_next(now=1000)
+    pasta_fonte = settings.downloads_dir / fonte.id
+    pasta_fonte.mkdir(parents=True)
+    (pasta_fonte / "v.mp4").write_bytes(b"video")
+    store.mark_ready(fonte.id, "v.mp4", 5)
+
+    job = store.create("https://a", "transcricao", now=1001, origem=fonte.id)
+
+    chamou_download = {"sim": False}
+
+    def download_fn(**kwargs):
+        chamou_download["sim"] = True
+        raise AssertionError("não deveria baixar de novo")
+
+    reivindicado = store.claim_next(now=1002)
+    worker._processar_transcricao(
+        store, settings, reivindicado,
+        download_fn=download_fn, convert_fn=_convert_falso,
+        transcribe_fn=_transcribe_falso,
+    )
+    assert chamou_download["sim"] is False
+    pronto = store.get(job.id)
+    assert pronto.status == READY
+    assert pronto.filename == "transcricao.txt"
+    assert (pasta_fonte.parent / job.id / "transcricao.txt").read_text() == "texto transcrito"
+
+
+def test_transcricao_com_origem_expirada_baixa_de_novo(ambiente_com_groq):
+    store, settings = ambiente_com_groq
+    fonte = store.create("https://a", "video", now=1000)
+    store.claim_next(now=1000)
+    store.mark_ready(fonte.id, "v.mp4", 5)  # arquivo nunca existiu no disco -> expirado
+
+    job = store.create("https://a", "transcricao", now=1001, origem=fonte.id)
+    store.claim_next(now=1002)
+
+    chamou = {"sim": False}
+
+    def download_fn(**kwargs):
+        chamou["sim"] = True
+        destino = Path(kwargs["destino"])
+        destino.mkdir(parents=True, exist_ok=True)
+        arquivo = destino / "a.m4a"
+        arquivo.write_bytes(b"audio")
+        return DownloadResult(path=arquivo, title="T", size=5)
+
+    worker._processar_transcricao(
+        store, settings, store.get(job.id),
+        download_fn=download_fn, convert_fn=_convert_falso,
+        transcribe_fn=_transcribe_falso,
+    )
+    assert chamou["sim"] is True
+    assert store.get(job.id).status == READY
+
+
+def test_transcricao_audio_grande_e_rejeitada_sem_chamar_groq(ambiente_com_groq):
+    store, settings = ambiente_com_groq
+    job = store.create("https://a", "transcricao", now=1000)
+    store.claim_next(now=1001)
+
+    def convert_grande(origem, destino):
+        Path(destino).write_bytes(b"0" * (worker.LIMITE_BYTES + 1))
+
+    chamou_transcribe = {"sim": False}
+
+    def transcribe_fn(caminho, api_key):
+        chamou_transcribe["sim"] = True
+        return "nao deveria chegar aqui"
+
+    def download_fn(**kwargs):
+        destino = Path(kwargs["destino"])
+        destino.mkdir(parents=True, exist_ok=True)
+        arquivo = destino / "a.m4a"
+        arquivo.write_bytes(b"audio")
+        return DownloadResult(path=arquivo, title="T", size=5)
+
+    with pytest.raises(Exception):
+        worker._processar_transcricao(
+            store, settings, store.get(job.id),
+            download_fn=download_fn, convert_fn=convert_grande,
+            duration_fn=lambda caminho: 3000.0,
+            transcribe_fn=transcribe_fn,
+        )
+    assert chamou_transcribe["sim"] is False
+
+
+def test_transcricao_sucesso_via_run_one(ambiente_com_groq):
+    store, settings = ambiente_com_groq
+    job = store.create("https://a", "transcricao", now=1000)
+
+    def download_fn(**kwargs):
+        destino = Path(kwargs["destino"])
+        destino.mkdir(parents=True, exist_ok=True)
+        arquivo = destino / "a.m4a"
+        arquivo.write_bytes(b"audio")
+        return DownloadResult(path=arquivo, title="T", size=5)
+
+    import inemadlp.worker as worker_mod
+    original = worker_mod._processar_transcricao
+
+    def _wrapped(store, settings, job, download_fn=download_fn, **kwargs):
+        return original(
+            store, settings, job, download_fn=download_fn,
+            convert_fn=_convert_falso, transcribe_fn=_transcribe_falso,
+        )
+
+    worker_mod._processar_transcricao = _wrapped
+    try:
+        assert worker.run_one(store, settings, now=1001, download_fn=download_fn) is True
+    finally:
+        worker_mod._processar_transcricao = original
+
+    pronto = store.get(job.id)
+    assert pronto.status == READY
+    assert pronto.filename == "transcricao.txt"
+
+
+def test_transcricao_sem_chave_groq_vira_erro(ambiente):
+    store, settings = ambiente  # sem groq_api_key
+    store.create("https://a", "transcricao", now=1000)
+    assert worker.run_one(store, settings, now=1001, download_fn=_download_falso) is True
+    job = store.list_all()[0]
+    assert job.status == ERROR
+    assert "GROQ_API_KEY" in job.error
 
 
 def test_recover_on_boot_clears_orphans(ambiente):

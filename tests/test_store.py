@@ -108,3 +108,29 @@ def test_reopening_store_keeps_data(tmp_path):
     caminho = tmp_path / "p.db"
     job = Store(caminho).create("https://a", "video", now=1000)
     assert Store(caminho).get(job.id) is not None
+
+
+def test_origem_round_trips(store):
+    fonte = store.create("https://a", "video", now=1000)
+    job = store.create("https://a", "transcricao", now=1000, origem=fonte.id)
+    assert job.origem == fonte.id
+    assert store.get(job.id).origem == fonte.id
+
+
+def test_origem_default_none(store):
+    job = store.create("https://a", "video", now=1000)
+    assert job.origem is None
+
+
+def test_origem_none_for_row_inserted_without_column(tmp_path):
+    import sqlite3
+
+    caminho = tmp_path / "legacy.db"
+    st = Store(caminho)
+    with sqlite3.connect(caminho) as conn:
+        conn.execute(
+            "INSERT INTO jobs (id, url, format, status, progress, created_at)"
+            " VALUES ('velho', 'https://a', 'video', 'ready', 100, 1000)"
+        )
+    job = st.get("velho")
+    assert job.origem is None

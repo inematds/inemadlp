@@ -14,6 +14,7 @@ class Settings:
     upload_token: str
     ttl_hours: int
     data_dir: Path
+    groq_api_key: str
 
     @property
     def db_path(self) -> Path:
@@ -38,4 +39,5 @@ def load_settings(env: Mapping[str, str]) -> Settings:
         upload_token=env["DLP_UPLOAD_TOKEN"],
         ttl_hours=int(env.get("DLP_TTL_HOURS", "6")),
         data_dir=Path(env.get("DLP_DATA_DIR", "/data")),
+        groq_api_key=env.get("GROQ_API_KEY", ""),
     )

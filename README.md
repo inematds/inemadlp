@@ -18,7 +18,7 @@ Guia completo (landing + passo a passo): **https://inematds.github.io/inemadlp/g
 4. [Acesso remoto e portas](#acesso-remoto-e-portas)
 5. [Depois que subiu: o primeiro download](#depois-que-subiu-o-primeiro-download)
 6. [Cookies](#cookies)
-7. [Transcrição (em desenvolvimento)](#transcrição-em-desenvolvimento)
+7. [Transcrição](#transcrição)
 8. [Atualizar](#atualizar)
 9. [Operação do dia a dia](#operação-do-dia-a-dia)
 10. [Quando algo dá errado](#quando-algo-dá-errado)
@@ -403,13 +403,20 @@ E, se quiser nunca mais ver o erro, um cron semanal:
 
 ---
 
-## Transcrição (em desenvolvimento)
+## Transcrição
 
-Está sendo construída uma terceira opção, ao lado de Vídeo e Áudio: **Transcrição**,
-usando o Whisper na API da Groq. O texto aparece na própria tela, com botão de
-copiar, e também como `.txt` para baixar. Jobs de vídeo e áudio já prontos ganham
-um botão **Transcrever** que reaproveita o arquivo já baixado, sem tocar na fonte
-de novo.
+Existe uma terceira opção, ao lado de Vídeo e Áudio: **Transcrição**, usando o
+Whisper (`whisper-large-v3-turbo`) na API da Groq. Dois jeitos de pedir:
+
+- Direto: cole o link e escolha **Transcrição** no formulário — o job baixa o
+  áudio e transcreve, do zero.
+- A partir de um job já pronto: jobs de vídeo ou áudio com status "pronto" ganham
+  um botão **Transcrever**, que reaproveita o arquivo já baixado em vez de buscar
+  a fonte de novo (só volta a baixar se esse arquivo já tiver expirado).
+
+O texto aparece na própria tela, num bloco expansível com botão de copiar — pensado
+pra celular, onde abrir um `.txt` baixado é chato — e também dá pra baixar o `.txt`
+pelo botão de sempre.
 
 **Limitação conhecida, por decisão de projeto: vídeos longos ficam de fora.**
 

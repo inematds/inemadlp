@@ -30,6 +30,28 @@ def ambiente(tmp_path):
 
 
 @pytest.fixture
+def ambiente_com_groq(tmp_path):
+    settings = load_settings({
+        "DLP_PASSWORD": SENHA,
+        "DLP_SECRET_KEY": "chave",
+        "DLP_UPLOAD_TOKEN": TOKEN,
+        "DLP_DATA_DIR": str(tmp_path),
+        "GROQ_API_KEY": "chave-groq-fake",
+    })
+    store = Store(settings.db_path)
+    app = create_app(settings, store, start_worker=False)
+    return TestClient(app, base_url="https://testserver"), store, settings
+
+
+@pytest.fixture
+def logado_com_groq(ambiente_com_groq):
+    cliente, store, settings = ambiente_com_groq
+    autenticado = TestClient(cliente.app, base_url="https://testserver")
+    assert autenticado.post("/api/login", json={"senha": SENHA}).status_code == 204
+    return autenticado, store, settings
+
+
+@pytest.fixture
 def logado(ambiente):
     cliente, store, settings = ambiente
     # cliente autenticado próprio: cliente_anonimo (de `ambiente`) precisa
@@ -180,3 +202,45 @@ def test_serves_the_pwa(ambiente):
     resposta = cliente.get("/")
     assert resposta.status_code == 200
     assert "inemadlp" in resposta.text.lower()
+
+
+def test_transcricao_sem_chave_groq_e_400(logado):
+    cliente, _, _ = logado
+    resposta = cliente.post("/api/jobs", json={"url": "https://a", "formato": "transcricao"})
+    assert resposta.status_code == 400
+    assert "GROQ_API_KEY" in resposta.json()["erro"]
+
+
+def test_transcricao_com_chave_groq_e_201(logado_com_groq):
+    cliente, _, _ = logado_com_groq
+    resposta = cliente.post("/api/jobs", json={"url": "https://a", "formato": "transcricao"})
+    assert resposta.status_code == 201
+
+
+def test_transcricao_com_origem_inexistente_e_400(logado_com_groq):
+    cliente, _, _ = logado_com_groq
+    resposta = cliente.post(
+        "/api/jobs",
+        json={"url": "https://a", "formato": "transcricao", "origem": "nao-existe"},
+    )
+    assert resposta.status_code == 400
+
+
+def test_session_reporta_disponibilidade_de_transcricao(ambiente, ambiente_com_groq):
+    sem_chave, _, _ = ambiente
+    com_chave, _, _ = ambiente_com_groq
+    assert sem_chave.get("/api/session").json()["transcricao_disponivel"] is False
+    assert com_chave.get("/api/session").json()["transcricao_disponivel"] is True
+
+
+def test_job_de_transcricao_pronto_serializa_com_texto(logado_com_groq):
+    cliente, store, settings = logado_com_groq
+    job = store.create("https://a", "transcricao", now=1000)
+    pasta = settings.downloads_dir / job.id
+    pasta.mkdir(parents=True)
+    (pasta / "transcricao.txt").write_text("texto de teste", encoding="utf-8")
+    store.mark_ready(job.id, "transcricao.txt", 14)
+
+    resposta = cliente.get("/api/jobs")
+    encontrado = next(j for j in resposta.json()["jobs"] if j["id"] == job.id)
+    assert encontrado["transcricao_texto"] == "texto de teste"

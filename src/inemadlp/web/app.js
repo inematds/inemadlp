@@ -1,6 +1,7 @@
 const $ = (id) => document.getElementById(id);
 const INTERVALO = 2000;
 let timer = null;
+let transcricaoDisponivel = false;
 
 async function api(caminho, opcoes = {}) {
   const resposta = await fetch(caminho, opcoes);
@@ -26,6 +27,19 @@ function formatarTamanho(bytes) {
   return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb.toFixed(1)} MB`;
 }
 
+async function transcrever(job) {
+  try {
+    await api("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: job.url, formato: "transcricao", origem: job.id }),
+    });
+    atualizar();
+  } catch (erro) {
+    if (erro.status === 401) mostrar(false);
+  }
+}
+
 function linha(job) {
   const li = document.createElement("li");
   li.className = `job ${job.status}`;
@@ -46,11 +60,49 @@ function linha(job) {
   li.append(estado);
 
   if (job.status === "ready") {
+    const acoes = document.createElement("div");
+    acoes.className = "acoes";
+
     const link = document.createElement("a");
     link.href = `/api/jobs/${job.id}/file`;
     link.textContent = "Baixar";
     link.className = "baixar";
-    li.append(link);
+    acoes.append(link);
+
+    if ((job.formato === "video" || job.formato === "audio") && transcricaoDisponivel) {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.className = "transcrever";
+      botao.textContent = "Transcrever";
+      botao.addEventListener("click", () => transcrever(job));
+      acoes.append(botao);
+    }
+    li.append(acoes);
+
+    if (job.formato === "transcricao" && typeof job.transcricao_texto === "string") {
+      const detalhes = document.createElement("details");
+      detalhes.className = "transcricao-texto";
+      const resumo = document.createElement("summary");
+      resumo.textContent = "Ver transcrição";
+      detalhes.append(resumo);
+
+      const texto = document.createElement("pre");
+      texto.textContent = job.transcricao_texto;
+      detalhes.append(texto);
+
+      const copiar = document.createElement("button");
+      copiar.type = "button";
+      copiar.className = "copiar";
+      copiar.textContent = "Copiar";
+      copiar.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(job.transcricao_texto);
+        copiar.textContent = "Copiado!";
+        setTimeout(() => { copiar.textContent = "Copiar"; }, 1500);
+      });
+      detalhes.append(copiar);
+
+      li.append(detalhes);
+    }
   }
   return li;
 }
@@ -150,4 +202,6 @@ $("sair").addEventListener("click", async () => {
 api("/api/session").then((dados) => {
   mostrar(dados.autenticado);
   $("versao").textContent = `inemadlp v${dados.versao}`;
+  transcricaoDisponivel = !!dados.transcricao_disponivel;
+  $("opcao-transcricao").hidden = !transcricaoDisponivel;
 });
