@@ -226,6 +226,20 @@ def test_transcricao_com_origem_inexistente_e_400(logado_com_groq):
     assert resposta.status_code == 400
 
 
+def test_transcricao_com_origem_sendo_outra_transcricao_e_400(logado_com_groq):
+    cliente, _, _ = logado_com_groq
+    primeira = cliente.post("/api/jobs", json={"url": "https://a", "formato": "transcricao"})
+    assert primeira.status_code == 201
+    origem_id = primeira.json()["id"]
+
+    resposta = cliente.post(
+        "/api/jobs",
+        json={"url": "https://a", "formato": "transcricao", "origem": origem_id},
+    )
+    assert resposta.status_code == 400
+    assert "não pode ser outra transcrição" in resposta.json()["erro"]
+
+
 def test_session_reporta_disponibilidade_de_transcricao(ambiente, ambiente_com_groq):
     sem_chave, _, _ = ambiente
     com_chave, _, _ = ambiente_com_groq

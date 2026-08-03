@@ -1,10 +1,11 @@
 import asyncio
 import dataclasses
+import subprocess
 from pathlib import Path
 
 import pytest
 
-from inemadlp import worker
+from inemadlp import transcritor, worker
 from inemadlp.config import load_settings
 from inemadlp.downloader import DownloadError, DownloadResult
 from inemadlp.store import ERROR, PENDING, READY, RUNNING, Store
@@ -180,22 +181,43 @@ def test_transcricao_reusa_arquivo_de_origem_sem_baixar(ambiente_com_groq):
     job = store.create("https://a", "transcricao", now=1001, origem=fonte.id)
 
     chamou_download = {"sim": False}
+    convert_chamado_com = {}
 
     def download_fn(**kwargs):
         chamou_download["sim"] = True
         raise AssertionError("não deveria baixar de novo")
 
+    def convert_capturando(origem, destino):
+        convert_chamado_com["origem"] = Path(origem)
+        Path(destino).write_bytes(b"0" * 1000)
+
+    progressos_registrados = []
+    set_progress_original = store.set_progress
+
+    def set_progress_espiao(job_id, progress):
+        progressos_registrados.append(progress)
+        return set_progress_original(job_id, progress)
+
+    store.set_progress = set_progress_espiao
+
     reivindicado = store.claim_next(now=1002)
     worker._processar_transcricao(
         store, settings, reivindicado,
-        download_fn=download_fn, convert_fn=_convert_falso,
+        download_fn=download_fn, convert_fn=convert_capturando,
         transcribe_fn=_transcribe_falso,
     )
     assert chamou_download["sim"] is False
+    # a prova real de reuso: convert_fn tem que ter recebido o arquivo do
+    # job de ORIGEM, não um caminho qualquer.
+    assert convert_chamado_com["origem"] == pasta_fonte / "v.mp4"
     pronto = store.get(job.id)
     assert pronto.status == READY
     assert pronto.filename == "transcricao.txt"
     assert (pasta_fonte.parent / job.id / "transcricao.txt").read_text() == "texto transcrito"
+    # progresso avançou de verdade no caminho de reuso, não ficou congelado
+    # em 0 do início ao fim (o bug original: on_progress só era ligado no
+    # branch de re-download).
+    assert progressos_registrados == [0.0, 40.0, 70.0, 100.0]
 
 
 def test_transcricao_com_origem_expirada_baixa_de_novo(ambiente_com_groq):
@@ -247,7 +269,7 @@ def test_transcricao_audio_grande_e_rejeitada_sem_chamar_groq(ambiente_com_groq)
         arquivo.write_bytes(b"audio")
         return DownloadResult(path=arquivo, title="T", size=5)
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception) as excinfo:
         worker._processar_transcricao(
             store, settings, store.get(job.id),
             download_fn=download_fn, convert_fn=convert_grande,
@@ -255,6 +277,10 @@ def test_transcricao_audio_grande_e_rejeitada_sem_chamar_groq(ambiente_com_groq)
             transcribe_fn=transcribe_fn,
         )
     assert chamou_transcribe["sim"] is False
+    mensagem = str(excinfo.value)
+    assert "longo demais" in mensagem
+    assert f"{worker.LIMITE_MINUTOS_APROX} minutos" in mensagem
+    assert "~50 min" in mensagem  # 3000s = 50 min, vem de duration_fn
 
 
 def test_transcricao_sucesso_via_run_one(ambiente_com_groq):
@@ -295,6 +321,62 @@ def test_transcricao_sem_chave_groq_vira_erro(ambiente):
     job = store.list_all()[0]
     assert job.status == ERROR
     assert "GROQ_API_KEY" in job.error
+
+
+@pytest.fixture
+def audio_gerado(tmp_path):
+    """5s de áudio real (44.1kHz estéreo) gerado com ffmpeg, sem fake nenhum."""
+    caminho = tmp_path / "fonte.wav"
+    subprocess.run(
+        ["ffmpeg", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=5",
+         "-ar", "44100", "-ac", "2", str(caminho)],
+        capture_output=True, check=True, timeout=30,
+    )
+    return caminho
+
+
+def test_converter_16k_mono_produz_mp3_16khz_mono_de_tamanho_plausivel(audio_gerado, tmp_path):
+    destino = tmp_path / "saida.mp3"
+    worker._converter_16k_mono(audio_gerado, destino)
+
+    assert destino.exists()
+    tamanho = destino.stat().st_size
+    # 5s a 64kbit/s -> ~40KB; folga generosa pros cabeçalhos do mp3.
+    assert 20_000 < tamanho < 80_000
+
+    sondagem = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a:0",
+         "-show_entries", "stream=sample_rate,channels,codec_name",
+         "-of", "default=noprint_wrappers=1", str(destino)],
+        capture_output=True, text=True, check=True, timeout=30,
+    )
+    saida = sondagem.stdout
+    assert "sample_rate=16000" in saida
+    assert "channels=1" in saida
+    assert "codec_name=mp3" in saida
+
+
+def test_duracao_segundos_retorna_duracao_real_com_tolerancia(audio_gerado):
+    duracao = worker._duracao_segundos(audio_gerado)
+    assert duracao is not None
+    assert abs(duracao - 5.0) < 0.2
+
+
+def test_duracao_segundos_arquivo_invalido_retorna_none(tmp_path):
+    invalido = tmp_path / "nao_e_audio.txt"
+    invalido.write_text("isto não é áudio")
+    assert worker._duracao_segundos(invalido) is None
+
+
+def test_converter_16k_mono_estoura_timeout_vira_transcricao_error(audio_gerado, tmp_path, monkeypatch):
+    def run_que_expira(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=args[0] if args else "ffmpeg", timeout=kwargs.get("timeout", 1))
+
+    monkeypatch.setattr(worker.subprocess, "run", run_que_expira)
+    destino = tmp_path / "saida.mp3"
+    with pytest.raises(transcritor.TranscricaoError) as excinfo:
+        worker._converter_16k_mono(audio_gerado, destino)
+    assert "demorou demais" in str(excinfo.value)
 
 
 def test_recover_on_boot_clears_orphans(ambiente):

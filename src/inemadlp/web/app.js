@@ -27,6 +27,32 @@ function formatarTamanho(bytes) {
   return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb.toFixed(1)} MB`;
 }
 
+async function copiarTexto(texto) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      return true;
+    } catch {
+      // cai no fallback abaixo
+    }
+  }
+  const area = document.createElement("textarea");
+  area.value = texto;
+  area.style.position = "fixed";
+  area.style.opacity = "0";
+  document.body.append(area);
+  area.focus();
+  area.select();
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {
+    ok = false;
+  }
+  area.remove();
+  return ok;
+}
+
 async function transcrever(job) {
   try {
     await api("/api/jobs", {
@@ -51,7 +77,15 @@ function linha(job) {
   const estado = document.createElement("span");
   estado.className = "estado";
   if (job.status === "pending") estado.textContent = "na fila";
-  else if (job.status === "running") estado.textContent = `baixando ${job.progresso}%`;
+  else if (job.status === "running") {
+    if (job.formato === "transcricao") {
+      estado.textContent = job.progresso > 0 && job.progresso < 40
+        ? `baixando o áudio ${job.progresso}%`
+        : "transcrevendo…";
+    } else {
+      estado.textContent = `baixando ${job.progresso}%`;
+    }
+  }
   else if (job.status === "expired") estado.textContent = "expirado";
   else if (job.status === "error") estado.textContent = job.erro_de_cookies
     ? "cookies expirados — envie um cookies.txt novo abaixo"
@@ -95,9 +129,9 @@ function linha(job) {
       copiar.className = "copiar";
       copiar.textContent = "Copiar";
       copiar.addEventListener("click", async () => {
-        await navigator.clipboard.writeText(job.transcricao_texto);
-        copiar.textContent = "Copiado!";
-        setTimeout(() => { copiar.textContent = "Copiar"; }, 1500);
+        const ok = await copiarTexto(job.transcricao_texto);
+        copiar.textContent = ok ? "Copiado!" : "Não foi possível copiar — selecione o texto manualmente";
+        setTimeout(() => { copiar.textContent = "Copiar"; }, ok ? 1500 : 3000);
       });
       detalhes.append(copiar);
 

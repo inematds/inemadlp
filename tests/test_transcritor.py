@@ -51,8 +51,16 @@ def test_transcrever_rate_limit_gera_erro_distinguivel(audio):
         transcritor.transcrever(audio, "chave", post_fn=post_fn)
 
 
-def test_rate_limit_error_e_subclasse_de_transcricao_error(audio):
-    assert issubclass(transcritor.TranscricaoRateLimitError, transcritor.TranscricaoError)
+def test_rate_limit_429_vira_transcricao_rate_limit_error_com_mensagem(audio):
+    def post_fn(url, headers, corpo):
+        return 429, json.dumps({"error": {"message": "quota excedida"}}).encode()
+
+    with pytest.raises(transcritor.TranscricaoRateLimitError) as excinfo:
+        transcritor.transcrever(audio, "chave", post_fn=post_fn)
+    # é subclasse de TranscricaoError -> quem trata só o genérico também pega isto
+    assert isinstance(excinfo.value, transcritor.TranscricaoError)
+    assert "limite de uso da Groq" in str(excinfo.value)
+    assert "quota excedida" in str(excinfo.value)
 
 
 def test_transcrever_erro_sem_campo_text(audio):

@@ -14,10 +14,15 @@ logger = logging.getLogger(__name__)
 
 BOOT_MESSAGE = "o serviço foi reiniciado durante o download"
 
-# Limite deliberado: sem chunking automático. 25 MB em 16kHz/mono/16-bit
-# equivale a pouco mais de 50 minutos de áudio.
+# Limite deliberado: sem chunking automático. Convertemos para mp3 16kHz/mono
+# a 64kbit/s (CBR) — bitrate constante, então o tamanho não depende do
+# conteúdo do áudio (fala, música ou silêncio dão o mesmo tamanho por minuto).
+# Medido: 481.005 bytes/min -> 25 MB / 481.005 B/min ≈ 54,5 min. Usamos 54
+# (arredondado para baixo) para a mensagem nunca prometer mais do que o
+# código realmente aceita.
 LIMITE_BYTES = 25 * 1024 * 1024
-LIMITE_MINUTOS_APROX = 50
+LIMITE_MINUTOS_APROX = 54
+SUBPROCESS_TIMEOUT_SEGUNDOS = 600
 
 
 def recover_on_boot(store: Store) -> int:
@@ -25,24 +30,37 @@ def recover_on_boot(store: Store) -> int:
 
 
 def _converter_16k_mono(origem: Path, destino: Path) -> None:
-    resultado = subprocess.run(
-        ["ffmpeg", "-i", str(origem), "-ar", "16000", "-ac", "1", "-y", str(destino)],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        resultado = subprocess.run(
+            [
+                "ffmpeg", "-i", str(origem), "-ar", "16000", "-ac", "1",
+                "-c:a", "libmp3lame", "-b:a", "64k", "-y", str(destino),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=SUBPROCESS_TIMEOUT_SEGUNDOS,
+        )
+    except subprocess.TimeoutExpired as erro:
+        raise transcritor.TranscricaoError(
+            "conversão do áudio demorou demais e foi cancelada — tente novamente mais tarde"
+        ) from erro
     if resultado.returncode != 0:
         raise RuntimeError(f"ffmpeg falhou ao converter o áudio: {resultado.stderr[-500:]}")
 
 
 def _duracao_segundos(caminho: Path) -> float | None:
-    resultado = subprocess.run(
-        [
-            "ffprobe", "-v", "error", "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1", str(caminho),
-        ],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        resultado = subprocess.run(
+            [
+                "ffprobe", "-v", "error", "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1", str(caminho),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=SUBPROCESS_TIMEOUT_SEGUNDOS,
+        )
+    except subprocess.TimeoutExpired:
+        return None
     try:
         return float(resultado.stdout.strip())
     except (ValueError, AttributeError):
@@ -90,9 +108,17 @@ def _processar_transcricao(
         )
         audio_original = resultado.path
         store.set_title(job.id, resultado.title)
+    else:
+        # Reaproveitando arquivo já baixado: não há progresso de download,
+        # mas o job segue vivo — marca 0 explicitamente (não fica sem
+        # nenhuma chamada a set_progress, que era o bug: o job parado em
+        # progress=0 do estado inicial parecia travado em "baixando").
+        store.set_progress(job.id, 0.0)
 
-    convertido = destino / "audio_16k_mono.wav"
+    store.set_progress(job.id, 40.0)
+    convertido = destino / "audio_16k_mono.mp3"
     convert_fn(audio_original, convertido)
+    store.set_progress(job.id, 70.0)
 
     tamanho = convertido.stat().st_size
     if tamanho > LIMITE_BYTES:
@@ -104,6 +130,7 @@ def _processar_transcricao(
         )
 
     texto = transcribe_fn(convertido, settings.groq_api_key)
+    store.set_progress(job.id, 100.0)
 
     nome_txt = "transcricao.txt"
     (destino / nome_txt).write_text(texto, encoding="utf-8")

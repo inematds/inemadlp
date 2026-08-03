@@ -420,9 +420,11 @@ pelo botão de sempre.
 
 **Limitação conhecida, por decisão de projeto: vídeos longos ficam de fora.**
 
-A API de transcrição da Groq aceita no máximo **25 MB por arquivo**. Reamostrando
-para 16 kHz mono — o formato que o Whisper usa internamente, sem perda para fala —
-isso equivale a mais ou menos **50 minutos de áudio**.
+A API de transcrição da Groq aceita no máximo **25 MB por arquivo**. O áudio é
+reamostrado para 16 kHz mono — o formato que o Whisper usa internamente — e
+comprimido em mp3 a 64 kbit/s (bitrate constante, então o tamanho não depende
+do conteúdo). Medido: ~481 KB por minuto, ou seja os 25 MB batem em
+aproximadamente **54 minutos de áudio**.
 
 Acima disso o job é **recusado com um aviso** dizendo a duração do áudio e o limite,
 sem gastar chamada à API. Não há fatiamento automático: seria possível cortar o

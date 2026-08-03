@@ -121,8 +121,15 @@ def create_app(settings: Settings, store: Store, start_worker: bool = True) -> F
                     status_code=400,
                     detail="transcrição indisponível: nenhuma GROQ_API_KEY configurada no servidor",
                 )
-            if corpo.origem is not None and store.get(corpo.origem) is None:
-                raise HTTPException(status_code=400, detail="job de origem não encontrado")
+            if corpo.origem is not None:
+                origem_job = store.get(corpo.origem)
+                if origem_job is None:
+                    raise HTTPException(status_code=400, detail="job de origem não encontrado")
+                if origem_job.format == "transcricao":
+                    raise HTTPException(
+                        status_code=400,
+                        detail="job de origem não pode ser outra transcrição",
+                    )
         return {
             "id": store.create(url, corpo.formato, now=int(time.time()), origem=corpo.origem).id
         }
