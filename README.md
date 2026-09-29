@@ -1,5 +1,7 @@
 # inemadlp
 
+**🇧🇷 [Português](README.md) · 🇺🇸 [English](README.en.md) · 🇪🇸 [Español](README.es.md)**
+
 Downloader pessoal de vídeo e áudio (FastAPI + yt-dlp) que roda na sua VPS. Você
 cola o link pelo celular, a VPS baixa e devolve o arquivo — que se apaga sozinho
 depois de 6 horas.

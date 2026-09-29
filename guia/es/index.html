@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>inemadlp — tu downloader de video, en tu VPS</title>
+<meta content="Descargador personal de video y audio: pegas el enlace en el celular, tu VPS lo descarga con yt-dlp y te devuelve el archivo, que se elimina solo después de 6 horas." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#0c0c10; --bg2:#14141b; --card:#16161e; --line:#272730;
+    --txt:#e9e9ee; --mut:#9a9aa6; --amb:#E2A23B; --amb2:#f0c070; --sky:#38bdf8; --pro:#cbd5e1;
+    color-scheme:dark;
+  }
+  body.light{
+    --bg:#f6f7f9; --bg2:#eceef2; --card:#ffffff; --line:#e1e3ea;
+    --txt:#1a1a22; --mut:#5b5b68; --amb:#b9791d; --amb2:#a16207; --sky:#0369a1; --pro:#b45309;
+    color-scheme:light;
+  }
+  body.light .hero .glow{opacity:.5}
+  body.light pre{background:#0e0e14;color:#d6d6e0}
+  body.light pre .c{color:#8a8a98}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:Sora,sans-serif;line-height:1.15;margin:0}
+  a{color:var(--amb);text-decoration:none}
+  code,pre{font-family:"JetBrains Mono",monospace}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+  .mut{color:var(--mut)} .amb{color:var(--amb)}
+  .chip{display:inline-block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amb);font-weight:600;font-family:Sora}
+  nav{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);background:rgba(12,12,16,.78);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
+  nav .brand{display:flex;align-items:center;gap:8px;font-family:Sora;font-weight:800;letter-spacing:-.02em;color:var(--amb)}
+  nav .brand .emoji{font-size:1.25rem}
+  nav .sep{color:var(--mut);opacity:.45}
+  nav .inema{color:var(--sky);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .inema:hover{filter:brightness(1.15)}
+  nav .pro{color:var(--pro);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .pro:hover{filter:brightness(1.15)}
+  nav .clubpro{display:inline-flex;align-items:center;gap:6px}
+  nav .links{margin-left:auto;display:flex;align-items:center;gap:20px;font-size:.92rem}
+  nav .links a.sec{color:var(--mut)} nav .links a.sec:hover{color:var(--txt)}
+  .tgl{background:var(--bg2);border:1px solid var(--line);color:var(--txt);width:38px;height:38px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem}
+  .tgl:hover{border-color:var(--amb)}
+  .btn{display:inline-block;background:var(--amb);color:#1a1206;font-weight:600;padding:.6em 1.05em;border-radius:10px;font-family:Sora}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  @media(max-width:760px){nav .links a.sec{display:none}}
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero .glow{position:absolute;inset:-40% -20% auto auto;width:70%;height:600px;background:radial-gradient(closest-side,rgba(226,162,59,.22),transparent 70%);pointer-events:none}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:74px 22px}
+  .hero h1{font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;letter-spacing:-.025em}
+  .hero p.lead{font-size:1.18rem;color:var(--mut);margin:1.1em 0 1.6em;max-width:34ch}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .hero figure{margin:0;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000}
+  .hero figure img{width:100%;display:block}
+  @media(max-width:780px){.hero .wrap{grid-template-columns:1fr;padding:48px 22px}}
+  section{padding:62px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800;letter-spacing:-.02em}
+  section .sub{color:var(--mut);margin:.6em 0 2em;max-width:62ch}
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:820px){.g3,.g4{grid-template-columns:1fr 1fr}}
+  @media(max-width:540px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{font-size:1.05rem;margin-bottom:.4em}
+  .card p{color:var(--mut);font-size:.92rem;margin:0}
+  .card pre{margin:.9em 0 0}
+  .num{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:8px;background:rgba(226,162,59,.14);color:var(--amb);font-family:Sora;font-weight:800;font-size:.9rem;margin-bottom:.7em}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .flow span{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.45em .9em;font-size:.85rem;font-family:Sora;font-weight:600}
+  .flow .arr{color:var(--amb);border:none;background:none;padding:0 .1em}
+  pre{background:#0a0a0e;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;font-size:.86rem;line-height:1.6;color:#d6d6e0}
+  pre .c{color:#6f6f7c} pre .k{color:var(--amb2)} pre .s{color:#9ece6a}
+  .step{display:grid;grid-template-columns:46px 1fr;gap:16px;margin-bottom:26px}
+  .step .b{width:46px;height:46px;border-radius:12px;background:var(--amb);color:#1a1206;font-family:Sora;font-weight:800;font-size:1.25rem;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:1.12rem;margin-bottom:.3em}
+  .step p{color:var(--mut);margin:.2em 0 .7em}
+  .phase{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .phase:last-child{border:none}
+  .phase .tag{flex:0 0 92px;font-family:Sora;font-weight:800;color:var(--amb)}
+  .phase .d strong{display:block;margin-bottom:.2em}
+  .phase .d span{color:var(--mut);font-size:.92rem}
+  footer{padding:46px 0;text-align:center;color:var(--mut);font-size:.9rem}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.78rem;color:var(--mut);margin:0 4px}
+</style>
+<link href="https://inematds.github.io/inemadlp/guia/" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/inemadlp/guia/en/" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/inemadlp/guia/es/" hreflang="es" rel="alternate"/></head>
+<body><div class="inema-lang" style="position:fixed;right:14px;bottom:14px;z-index:9999;display:flex;gap:2px;padding:4px;border-radius:10px;background:rgba(12,12,16,.82);border:1px solid rgba(226,162,59,.45);font:600 12px/1 Sora,Inter,system-ui,sans-serif;backdrop-filter:blur(8px)" translate="no"><a href="../" hreflang="pt-BR" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">PT</a><a href="../en/" hreflang="en" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">EN</a><a href="./" hreflang="es" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#1a1206;background:#E2A23B">ES</a></div>
+<nav><div class="wrap">
+<a class="brand" href="#top"><span class="emoji">⬇️</span> inemadlp</a>
+<span class="sep">|</span>
+<span class="clubpro">
+<a class="inema" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<span class="sep">-</span>
+<a class="pro" href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+</span>
+<div class="links">
+<a class="sec" href="#oque">Qué es</a>
+<a class="sec" href="#fluxo">Cómo funciona</a>
+<a class="sec" href="#pre">Requisitos previos</a>
+<a class="sec" href="#guia">Guía de uso</a>
+<a class="sec" href="#cookies">Cookies</a>
+<a class="sec" href="#roadmap">Roadmap</a>
+<button aria-label="Cambiar tema" class="tgl" id="themeToggle" title="Cambiar tema">🌙</button>
+<a class="btn" href="https://github.com/inematds/inemadlp" rel="noopener" target="_blank">GitHub</a>
+</div>
+</div></nav>
+<header class="hero" id="top">
+<div class="glow"></div>
+<div class="wrap">
+<div>
+<span class="chip">Herramienta · uso personal</span>
+<h1>Pega el enlace. La <span class="amb">tu VPS</span> descarga.</h1>
+<p class="lead">Un descargador de video y audio que funciona en tu propia máquina, protegido con contraseña, y elimina el archivo automáticamente después de 6 horas.</p>
+<div class="cta">
+<a class="btn" href="#guia">Empezar la guía</a>
+<a class="btn ghost" href="https://github.com/inematds/inemadlp" rel="noopener" target="_blank">Ver en GitHub</a>
+</div>
+</div>
+<figure><img alt="inemadlp — downloader personal en VPS" src="../assets/hero.png"/></figure>
+</div>
+</header>
+<section id="oque"><div class="wrap">
+<span class="chip">Qué es</span>
+<h2>Un yt-dlp con interfaz, accesible desde el celular</h2>
+<p class="sub">Abres una página en tu VPS, pegas la URL, eliges video o audio y recibes el archivo. Por debajo está el yt-dlp de siempre — la diferencia es que no necesitas usar la terminal y la descarga sale desde una IP residencial de confianza en vez de la de tu celular.</p>
+<div class="grid g3">
+<div class="card"><h3>📱 Funciona desde el celular</h3><p>La interfaz es una PWA: la instalas en la pantalla de inicio, inicias sesión una vez con la contraseña y nunca más vuelve a pedirte que inicies sesión. Nada de apps, nada de tiendas.</p></div>
+<div class="card"><h3>🧹 No llena el disco</h3><p>Cada archivo descargado se elimina 6 horas después, y un barrido también recoge los restos de descargas fallidas. La VPS no se convierte en un depósito.</p></div>
+<div class="card"><h3>🍪 Evita el bloqueo</h3><p>Envías las cookies de tu navegador con sesión iniciada desde la propia interfaz. Esto evita el mensaje "Sign in to confirm you're not a bot" que bloquea las IP de centros de datos.</p></div>
+</div>
+</div></section>
+<section id="fluxo"><div class="wrap">
+<span class="chip">Cómo funciona</span>
+<h2>De la URL al archivo, sin que tengas que estar pendiente</h2>
+<p class="sub">Un solo proceso: FastAPI sirve la interfaz y la API, y un worker consume la cola con un job a la vez — a propósito, para evitar el rate limit de la fuente. Caddy se encarga del HTTPS.</p>
+<div class="flow">
+<span>Pega el enlace</span><span class="arr">→</span>
+<span>Entra en la cola</span><span class="arr">→</span>
+<span>yt-dlp descarga</span><span class="arr">→</span>
+<span>ffmpeg une</span><span class="arr">→</span>
+<span>Botón "Descargar"</span><span class="arr">→</span>
+<span>Se elimina en 6h</span>
+</div>
+<div class="grid g3" style="margin-top:26px">
+<div class="card"><h3>Un job a la vez</h3><p>La cola es serial. Dos descargas simultáneas solo aumentarían la probabilidad de bloqueo en el origen.</p></div>
+<div class="card"><h3>Sin reintento automático</h3><p>Falló, lo vuelves a poner en cola. Reintentar por tu cuenta contra una fuente que bloqueó solo hace que la IP se queme más rápido.</p></div>
+<div class="card"><h3>Reanudación de descargas</h3><p>La entrega admite Range, así que si se pierde la señal en el celular, la descarga continúa desde donde se quedó — por eso existe el TTL y no se elimina con la primera descarga.</p></div>
+</div>
+</div></section>
+<section id="pre"><div class="wrap">
+<span class="chip">Requisitos previos</span>
+<h2>Lo que debe estar listo</h2>
+<p class="sub">Una VPS Linux con Docker y un subdominio apuntado a ella. Nada más — ffmpeg y yt-dlp vienen dentro de la imagen.</p>
+<div class="grid g3">
+<div class="card"><h3>Docker + Compose</h3><p>Es el único requisito de software en la VPS.</p><pre><span class="c"># Ubuntu</span>
+<span class="k">curl -fsSL https://get.docker.com | sh</span></pre></div>
+<div class="card"><h3>Un subdominio</h3><p>Apunta un registro A a la IP de la VPS <em>antes</em> antes de subir: Caddy emite el certificado en el primer acceso.</p><pre><span class="c"># ejemplo</span>
+dlp.seudominio  A  <span class="s">203.0.113.10</span></pre></div>
+<div class="card"><h3>Un navegador con sesión iniciada</h3><p>En la PC o en el celular, con sesión iniciada en las fuentes desde donde descargas. De ahí salen las cookies.</p><pre><span class="c"># extensión (Edge/Chrome)</span>
+<span class="k">Get cookies.txt LOCALLY</span></pre></div>
+</div>
+</div></section>
+<section id="guia"><div class="wrap">
+<span class="chip">Guía de uso · paso a paso</span>
+<h2>De cero a la primera descarga</h2>
+<p class="sub">Son cinco pasos. A partir del tercero ya lo usas desde el celular.</p>
+<div class="step"><div class="b">1</div><div>
+<h3>Clonar y ejecutar el instalador</h3>
+<p>Genera los tres secretos, escribe el <code>.env</code> con el permiso correcto, inicia los contenedores e imprime tu contraseña al final.</p>
+<pre><span class="k">git clone https://github.com/inematds/inemadlp.git &amp;&amp; cd inemadlp</span>
+<span class="k">./instalar.sh dlp.seudominio</span>  <span class="c"># avisa si el DNS todavía no apunta aquí</span></pre>
+</div></div>
+<div class="step"><div class="b">2</div><div>
+<h3>Esperar el certificado</h3>
+<p>Caddy solicita el certificado en el primer acceso — de 10 a 60 segundos. ¿Prefieres hacerlo a mano en vez de usar el instalador? El <a href="https://github.com/inematds/inemadlp#readme">README</a> tiene el método manual.</p>
+<pre><span class="k">docker compose logs -f caddy</span>   <span class="c"># espera "certificate obtained"</span>
+<span class="k">curl -I https://dlp.seudominio</span>  <span class="c"># HTTP/2 200 = en línea</span></pre>
+</div></div>
+<div class="step"><div class="b">3</div><div>
+<h3>Instalar en el celular</h3>
+<p>Abre el dominio, inicia sesión con la contraseña y usa "Agregar a la pantalla de inicio". La sesión no expira: inicias sesión una vez y listo.</p>
+<pre><span class="c"># en el navegador del celular</span>
+<span class="s">https://dlp.seudominio</span></pre>
+</div></div>
+<div class="step"><div class="b">4</div><div>
+<h3>Enviar las cookies</h3>
+<p>Sin esto, YouTube rechaza la solicitud: la IP de la VPS es de un centro de datos. En la PC, con Edge o Chrome <strong>con la sesión iniciada en YouTube</strong>:</p>
+<ol style="color:var(--mut);margin:.2em 0 .9em;padding-left:1.2em">
+<li>instala la extensión <a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc" rel="noopener" target="_blank"><strong>Get cookies.txt LOCALLY</strong></a> (solo una vez);</li>
+<li>abre YouTube y confirma que aparece tu foto de perfil;</li>
+<li>haz clic en el ícono de la extensión → <strong>Export</strong> — descarga uno <code>cookies.txt</code>;</li>
+<li>en inemadlp, abre el panel <strong>Cookies</strong> y envía ese archivo;</li>
+<li>borra el <code>cookies.txt</code> de la carpeta Downloads: le da acceso a tu cuenta.</li>
+</ol>
+<p>Vuelve a hacerlo solo cuando falle una descarga: la interfaz te avisa <em>"cookies expiradas"</em>.</p>
+<pre><span class="c"># acceso directo, solo en la máquina Linux con Firefox con sesión iniciada</span>
+<span class="k">DLP_URL=https://dlp.seudominio DLP_UPLOAD_TOKEN=... ./sync-cookies.sh</span>
+<span class="c"># -&gt; {"cookies": 81}</span></pre>
+</div></div>
+<div class="step"><div class="b">5</div><div>
+<h3>Descargar</h3>
+<p>Pega la URL, elige <strong>Video</strong> (MP4 hasta 1080p) o <strong>Audio</strong> (M4A) y espera. El progreso aparece en la lista y el botón "Descargar" aparece al final.</p>
+<pre><span class="c"># el archivo está disponible durante 6 horas y luego desaparece</span>
+<span class="c"># ¿quieres más tiempo? DLP_TTL_HOURS en .env</span></pre>
+</div></div>
+</div></section>
+<section id="cookies"><div class="wrap">
+<span class="chip">Cookies</span>
+<h2>Por qué existe esto y cuándo renovar</h2>
+<p class="sub">YouTube y las otras fuentes desafían a las IP de centros de datos. Las cookies de un navegador con sesión iniciada resuelven esto — y son el único mantenimiento recurrente del proyecto.</p>
+<div class="grid g2">
+<div class="card"><h3>Cuando falle una descarga</h3><p>La propia interfaz dice <em>"cookies expiradas"</em> cuando reconoce el motivo. Luego vuelves a exportar y lo envías de nuevo; no hace falta adivinar. En la práctica, las cookies de YouTube duran semanas.</p></div>
+<div class="card"><h3>Por qué no se puede automatizar en Windows</h3><p>Edge y Chrome cifran las cookies con App-Bound Encryption desde la versión 127: solo el propio navegador obtiene la clave. Por eso, el método principal es subirlas y no usar un script.</p></div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+<div class="card"><h3>Cron semanal (opcional)</h3><p>En la máquina Linux con Firefox con sesión iniciada, puedes no ver nunca el error.</p><pre><span class="c"># todos los lunes, 9h</span>
+0 9 * * 1 DLP_URL=<span class="s">https://dlp.seudominio</span> DLP_UPLOAD_TOKEN=... /caminho/sync-cookies.sh</pre></div>
+<div class="card"><h3>Operación del día a día</h3><p>Prácticamente nula.</p><pre><span class="k">docker compose logs -f app</span>     <span class="c"># ver qué pasó</span>
+<span class="k">docker compose restart app</span>     <span class="c"># actualiza yt-dlp al iniciar</span></pre></div>
+</div>
+</div></section>
+<section id="roadmap"><div class="wrap">
+<span class="chip">Roadmap</span>
+<h2>Dónde está y qué quedó fuera</h2>
+<p class="sub">La v1 está completa y verificada de punta a punta. Lo que no está aquí se descartó a propósito: es una herramienta personal, no un producto.</p>
+<div class="phase"><div class="tag">v1 ✓</div><div class="d"><strong>Completo</strong><span>Cola, descarga de video y audio, PWA con contraseña, carga de cookies, expiración automática, deploy con Docker y Caddy. 77 pruebas, más una que descarga un video real, más verificación de la interfaz en el navegador.</span></div></div>
+<div class="phase"><div class="tag">Fuera</div><div class="d"><strong>Descartado por YAGNI</strong><span>Elección de resolución, listas de reproducción, subtítulos, recorte de fragmentos, varios usuarios y reintentos automáticos. Cada una de estas funciones existiría para un público que este proyecto no tiene.</span></div></div>
+<div class="phase"><div class="tag">Tal vez</div><div class="d"><strong>Si llega a ser lo bastante molesto</strong><span>Botón para volver a poner en cola con un clic (hoy tienes que volver a pegar la URL) y un instalador de PWA más completo en Android.</span></div></div>
+</div></section>
+<footer>
+<div class="wrap">
+<div class="pill">Python 3.12</div><div class="pill">FastAPI</div><div class="pill">yt-dlp + ffmpeg</div><div class="pill">SQLite</div><div class="pill">Docker + Caddy</div>
+<p style="margin-top:18px">inemadlp · uso personal, una VPS, un usuario ·
+      <a href="https://github.com/inematds/inemadlp">inematds/inemadlp</a> ·
+      <a href="https://inema.club">INEMA.CLUB</a></p>
+</div>
+</footer>
+<script>
+  (function(){
+    var KEY='inemadlp-theme';
+    var b=document.body, t=document.getElementById('themeToggle');
+    if(localStorage.getItem(KEY)==='light'){ b.classList.add('light'); t.textContent='☀️'; }
+    t.addEventListener('click',function(){
+      var light=b.classList.toggle('light');
+      t.textContent=light?'☀️':'🌙';
+      localStorage.setItem(KEY, light?'light':'dark');
+    });
+  })();
+</script>
+</body>
+</html>

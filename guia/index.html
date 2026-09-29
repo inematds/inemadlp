@@ -1,13 +1,14 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>inemadlp — seu downloader de vídeo, na sua VPS</title>
-<meta name="description" content="Downloader pessoal de vídeo e áudio: você cola o link no celular, a sua VPS baixa com yt-dlp e devolve o arquivo, que se apaga sozinho depois de 6 horas.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<meta content="Downloader pessoal de vídeo e áudio: você cola o link no celular, a sua VPS baixa com yt-dlp e devolve o arquivo, que se apaga sozinho depois de 6 horas." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
 <style>
   :root{
     --bg:#0c0c10; --bg2:#14141b; --card:#16161e; --line:#272730;
@@ -86,173 +87,158 @@
   footer{padding:46px 0;text-align:center;color:var(--mut);font-size:.9rem}
   .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.78rem;color:var(--mut);margin:0 4px}
 </style>
-</head>
-<body>
-
+<link href="https://inematds.github.io/inemadlp/guia/" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/inemadlp/guia/en/" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/inemadlp/guia/es/" hreflang="es" rel="alternate"/></head>
+<body><div class="inema-lang" style="position:fixed;right:14px;bottom:14px;z-index:9999;display:flex;gap:2px;padding:4px;border-radius:10px;background:rgba(12,12,16,.82);border:1px solid rgba(226,162,59,.45);font:600 12px/1 Sora,Inter,system-ui,sans-serif;backdrop-filter:blur(8px)" translate="no"><a href="./" hreflang="pt-BR" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#1a1206;background:#E2A23B">PT</a><a href="en/" hreflang="en" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">EN</a><a href="es/" hreflang="es" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">ES</a></div>
 <nav><div class="wrap">
-  <a class="brand" href="#top"><span class="emoji">⬇️</span> inemadlp</a>
-  <span class="sep">|</span>
-  <span class="clubpro">
-    <a class="inema" href="https://inema.club" target="_blank" rel="noopener">INEMA.CLUB</a>
-    <span class="sep">-</span>
-    <a class="pro" href="https://inema.pro" target="_blank" rel="noopener">PRO</a>
-  </span>
-  <div class="links">
-    <a class="sec" href="#oque">O que é</a>
-    <a class="sec" href="#fluxo">Como funciona</a>
-    <a class="sec" href="#pre">Pré-requisitos</a>
-    <a class="sec" href="#guia">Guia de uso</a>
-    <a class="sec" href="#cookies">Cookies</a>
-    <a class="sec" href="#roadmap">Roadmap</a>
-    <button class="tgl" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">🌙</button>
-    <a class="btn" href="https://github.com/inematds/inemadlp" target="_blank" rel="noopener">GitHub</a>
-  </div>
+<a class="brand" href="#top"><span class="emoji">⬇️</span> inemadlp</a>
+<span class="sep">|</span>
+<span class="clubpro">
+<a class="inema" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<span class="sep">-</span>
+<a class="pro" href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+</span>
+<div class="links">
+<a class="sec" href="#oque">O que é</a>
+<a class="sec" href="#fluxo">Como funciona</a>
+<a class="sec" href="#pre">Pré-requisitos</a>
+<a class="sec" href="#guia">Guia de uso</a>
+<a class="sec" href="#cookies">Cookies</a>
+<a class="sec" href="#roadmap">Roadmap</a>
+<button aria-label="Alternar tema" class="tgl" id="themeToggle" title="Alternar tema">🌙</button>
+<a class="btn" href="https://github.com/inematds/inemadlp" rel="noopener" target="_blank">GitHub</a>
+</div>
 </div></nav>
-
 <header class="hero" id="top">
-  <div class="glow"></div>
-  <div class="wrap">
-    <div>
-      <span class="chip">Ferramenta · uso pessoal</span>
-      <h1>Cola o link. A <span class="amb">sua VPS</span> baixa.</h1>
-      <p class="lead">Um downloader de vídeo e áudio que roda na sua própria máquina, protegido por senha, com o arquivo se apagando sozinho depois de 6 horas.</p>
-      <div class="cta">
-        <a class="btn" href="#guia">Começar o guia</a>
-        <a class="btn ghost" href="https://github.com/inematds/inemadlp" target="_blank" rel="noopener">Ver no GitHub</a>
-      </div>
-    </div>
-    <figure><img src="assets/hero.png" alt="inemadlp — downloader pessoal em VPS"></figure>
-  </div>
+<div class="glow"></div>
+<div class="wrap">
+<div>
+<span class="chip">Ferramenta · uso pessoal</span>
+<h1>Cola o link. A <span class="amb">sua VPS</span> baixa.</h1>
+<p class="lead">Um downloader de vídeo e áudio que roda na sua própria máquina, protegido por senha, com o arquivo se apagando sozinho depois de 6 horas.</p>
+<div class="cta">
+<a class="btn" href="#guia">Começar o guia</a>
+<a class="btn ghost" href="https://github.com/inematds/inemadlp" rel="noopener" target="_blank">Ver no GitHub</a>
+</div>
+</div>
+<figure><img alt="inemadlp — downloader pessoal em VPS" src="assets/hero.png"/></figure>
+</div>
 </header>
-
 <section id="oque"><div class="wrap">
-  <span class="chip">O que é</span>
-  <h2>Um yt-dlp com interface, acessível do celular</h2>
-  <p class="sub">Você abre uma página na sua VPS, cola a URL, escolhe vídeo ou áudio e recebe o arquivo. Por baixo é o yt-dlp de sempre — a diferença é não precisar de terminal, e o download sair de um IP residencial de confiança em vez do seu celular.</p>
-  <div class="grid g3">
-    <div class="card"><h3>📱 Funciona do celular</h3><p>A interface é uma PWA: instala na tela de início, entra uma vez com a senha e nunca mais pede login. Nada de app, nada de loja.</p></div>
-    <div class="card"><h3>🧹 Não entope o disco</h3><p>Todo arquivo baixado é apagado 6 horas depois, e uma varredura recolhe também as sobras de downloads que falharam. A VPS não vira depósito.</p></div>
-    <div class="card"><h3>🍪 Passa pelo bloqueio</h3><p>Você envia os cookies do seu navegador logado pela própria interface. É o que evita o "Sign in to confirm you're not a bot" que barra IPs de datacenter.</p></div>
-  </div>
+<span class="chip">O que é</span>
+<h2>Um yt-dlp com interface, acessível do celular</h2>
+<p class="sub">Você abre uma página na sua VPS, cola a URL, escolhe vídeo ou áudio e recebe o arquivo. Por baixo é o yt-dlp de sempre — a diferença é não precisar de terminal, e o download sair de um IP residencial de confiança em vez do seu celular.</p>
+<div class="grid g3">
+<div class="card"><h3>📱 Funciona do celular</h3><p>A interface é uma PWA: instala na tela de início, entra uma vez com a senha e nunca mais pede login. Nada de app, nada de loja.</p></div>
+<div class="card"><h3>🧹 Não entope o disco</h3><p>Todo arquivo baixado é apagado 6 horas depois, e uma varredura recolhe também as sobras de downloads que falharam. A VPS não vira depósito.</p></div>
+<div class="card"><h3>🍪 Passa pelo bloqueio</h3><p>Você envia os cookies do seu navegador logado pela própria interface. É o que evita o "Sign in to confirm you're not a bot" que barra IPs de datacenter.</p></div>
+</div>
 </div></section>
-
 <section id="fluxo"><div class="wrap">
-  <span class="chip">Como funciona</span>
-  <h2>Da URL ao arquivo, sem você acompanhar</h2>
-  <p class="sub">Um processo só: FastAPI serve a interface e a API, e um worker consome a fila um job por vez — de propósito, para não levar rate-limit da fonte. O Caddy cuida do HTTPS.</p>
-  <div class="flow">
-    <span>Cola o link</span><span class="arr">→</span>
-    <span>Entra na fila</span><span class="arr">→</span>
-    <span>yt-dlp baixa</span><span class="arr">→</span>
-    <span>ffmpeg junta</span><span class="arr">→</span>
-    <span>Botão "Baixar"</span><span class="arr">→</span>
-    <span>Apaga em 6h</span>
-  </div>
-  <div class="grid g3" style="margin-top:26px">
-    <div class="card"><h3>Um job por vez</h3><p>A fila é serial. Dois downloads simultâneos só aumentariam a chance de bloqueio na origem.</p></div>
-    <div class="card"><h3>Sem retentativa automática</h3><p>Falhou, você reenfileira. Retentar sozinho contra uma fonte que bloqueou só queima o IP mais rápido.</p></div>
-    <div class="card"><h3>Retomada de download</h3><p>A entrega suporta Range, então uma queda de sinal no celular continua de onde parou — por isso o TTL, e não apagar no primeiro download.</p></div>
-  </div>
+<span class="chip">Como funciona</span>
+<h2>Da URL ao arquivo, sem você acompanhar</h2>
+<p class="sub">Um processo só: FastAPI serve a interface e a API, e um worker consome a fila um job por vez — de propósito, para não levar rate-limit da fonte. O Caddy cuida do HTTPS.</p>
+<div class="flow">
+<span>Cola o link</span><span class="arr">→</span>
+<span>Entra na fila</span><span class="arr">→</span>
+<span>yt-dlp baixa</span><span class="arr">→</span>
+<span>ffmpeg junta</span><span class="arr">→</span>
+<span>Botão "Baixar"</span><span class="arr">→</span>
+<span>Apaga em 6h</span>
+</div>
+<div class="grid g3" style="margin-top:26px">
+<div class="card"><h3>Um job por vez</h3><p>A fila é serial. Dois downloads simultâneos só aumentariam a chance de bloqueio na origem.</p></div>
+<div class="card"><h3>Sem retentativa automática</h3><p>Falhou, você reenfileira. Retentar sozinho contra uma fonte que bloqueou só queima o IP mais rápido.</p></div>
+<div class="card"><h3>Retomada de download</h3><p>A entrega suporta Range, então uma queda de sinal no celular continua de onde parou — por isso o TTL, e não apagar no primeiro download.</p></div>
+</div>
 </div></section>
-
 <section id="pre"><div class="wrap">
-  <span class="chip">Pré-requisitos</span>
-  <h2>O que precisa estar pronto</h2>
-  <p class="sub">Uma VPS Linux com Docker e um subdomínio apontado para ela. Mais nada — ffmpeg e yt-dlp vêm dentro da imagem.</p>
-  <div class="grid g3">
-    <div class="card"><h3>Docker + Compose</h3><p>É o único requisito de software na VPS.</p><pre><span class="c"># Ubuntu</span>
+<span class="chip">Pré-requisitos</span>
+<h2>O que precisa estar pronto</h2>
+<p class="sub">Uma VPS Linux com Docker e um subdomínio apontado para ela. Mais nada — ffmpeg e yt-dlp vêm dentro da imagem.</p>
+<div class="grid g3">
+<div class="card"><h3>Docker + Compose</h3><p>É o único requisito de software na VPS.</p><pre><span class="c"># Ubuntu</span>
 <span class="k">curl -fsSL https://get.docker.com | sh</span></pre></div>
-    <div class="card"><h3>Um subdomínio</h3><p>Aponte um registro A para o IP da VPS <em>antes</em> de subir: o Caddy emite o certificado no primeiro acesso.</p><pre><span class="c"># exemplo</span>
+<div class="card"><h3>Um subdomínio</h3><p>Aponte um registro A para o IP da VPS <em>antes</em> de subir: o Caddy emite o certificado no primeiro acesso.</p><pre><span class="c"># exemplo</span>
 dlp.seudominio  A  <span class="s">203.0.113.10</span></pre></div>
-    <div class="card"><h3>Um navegador logado</h3><p>No PC ou no celular, logado nas fontes de onde você baixa. É de lá que saem os cookies.</p><pre><span class="c"># extensão (Edge/Chrome)</span>
+<div class="card"><h3>Um navegador logado</h3><p>No PC ou no celular, logado nas fontes de onde você baixa. É de lá que saem os cookies.</p><pre><span class="c"># extensão (Edge/Chrome)</span>
 <span class="k">Get cookies.txt LOCALLY</span></pre></div>
-  </div>
+</div>
 </div></section>
-
 <section id="guia"><div class="wrap">
-  <span class="chip">Guia de uso · passo a passo</span>
-  <h2>Do zero ao primeiro download</h2>
-  <p class="sub">São cinco passos. Do terceiro em diante você já está usando pelo celular.</p>
-
-  <div class="step"><div class="b">1</div><div>
-    <h3>Clonar e rodar o instalador</h3>
-    <p>Ele gera os três segredos, escreve o <code>.env</code> com a permissão certa, sobe os containers e imprime a sua senha no fim.</p>
+<span class="chip">Guia de uso · passo a passo</span>
+<h2>Do zero ao primeiro download</h2>
+<p class="sub">São cinco passos. Do terceiro em diante você já está usando pelo celular.</p>
+<div class="step"><div class="b">1</div><div>
+<h3>Clonar e rodar o instalador</h3>
+<p>Ele gera os três segredos, escreve o <code>.env</code> com a permissão certa, sobe os containers e imprime a sua senha no fim.</p>
 <pre><span class="k">git clone https://github.com/inematds/inemadlp.git &amp;&amp; cd inemadlp</span>
 <span class="k">./instalar.sh dlp.seudominio</span>  <span class="c"># avisa se o DNS ainda não aponta pra cá</span></pre>
-  </div></div>
-
-  <div class="step"><div class="b">2</div><div>
-    <h3>Esperar o certificado</h3>
-    <p>O Caddy pede o certificado no primeiro acesso — de 10 a 60 segundos. Prefere fazer à mão em vez do instalador? O <a href="https://github.com/inematds/inemadlp#readme">README</a> tem o caminho manual.</p>
+</div></div>
+<div class="step"><div class="b">2</div><div>
+<h3>Esperar o certificado</h3>
+<p>O Caddy pede o certificado no primeiro acesso — de 10 a 60 segundos. Prefere fazer à mão em vez do instalador? O <a href="https://github.com/inematds/inemadlp#readme">README</a> tem o caminho manual.</p>
 <pre><span class="k">docker compose logs -f caddy</span>   <span class="c"># espere "certificate obtained"</span>
 <span class="k">curl -I https://dlp.seudominio</span>  <span class="c"># HTTP/2 200 = no ar</span></pre>
-  </div></div>
-
-  <div class="step"><div class="b">3</div><div>
-    <h3>Instalar no celular</h3>
-    <p>Abra o domínio, entre com a senha e use "Adicionar à tela de início". A sessão não expira — você loga uma vez e pronto.</p>
+</div></div>
+<div class="step"><div class="b">3</div><div>
+<h3>Instalar no celular</h3>
+<p>Abra o domínio, entre com a senha e use "Adicionar à tela de início". A sessão não expira — você loga uma vez e pronto.</p>
 <pre><span class="c"># no navegador do celular</span>
 <span class="s">https://dlp.seudominio</span></pre>
-  </div></div>
-
-  <div class="step"><div class="b">4</div><div>
-    <h3>Enviar os cookies</h3>
-    <p>Sem isso o YouTube recusa: o IP da VPS é de datacenter. No PC, com o Edge ou o Chrome <strong>logado no YouTube</strong>:</p>
-    <ol style="color:var(--mut);margin:.2em 0 .9em;padding-left:1.2em">
-      <li>instale a extensão <a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc" target="_blank" rel="noopener"><strong>Get cookies.txt LOCALLY</strong></a> (uma vez só);</li>
-      <li>abra o YouTube e confirme que sua foto de perfil aparece;</li>
-      <li>clique no ícone da extensão → <strong>Export</strong> — baixa um <code>cookies.txt</code>;</li>
-      <li>no inemadlp, abra o painel <strong>Cookies</strong> e envie esse arquivo;</li>
-      <li>apague o <code>cookies.txt</code> da pasta Downloads — ele dá acesso à sua conta.</li>
-    </ol>
-    <p>Refaça só quando um download falhar: a interface avisa <em>"cookies expirados"</em>.</p>
+</div></div>
+<div class="step"><div class="b">4</div><div>
+<h3>Enviar os cookies</h3>
+<p>Sem isso o YouTube recusa: o IP da VPS é de datacenter. No PC, com o Edge ou o Chrome <strong>logado no YouTube</strong>:</p>
+<ol style="color:var(--mut);margin:.2em 0 .9em;padding-left:1.2em">
+<li>instale a extensão <a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc" rel="noopener" target="_blank"><strong>Get cookies.txt LOCALLY</strong></a> (uma vez só);</li>
+<li>abra o YouTube e confirme que sua foto de perfil aparece;</li>
+<li>clique no ícone da extensão → <strong>Export</strong> — baixa um <code>cookies.txt</code>;</li>
+<li>no inemadlp, abra o painel <strong>Cookies</strong> e envie esse arquivo;</li>
+<li>apague o <code>cookies.txt</code> da pasta Downloads — ele dá acesso à sua conta.</li>
+</ol>
+<p>Refaça só quando um download falhar: a interface avisa <em>"cookies expirados"</em>.</p>
 <pre><span class="c"># atalho, só na máquina Linux com Firefox logado</span>
 <span class="k">DLP_URL=https://dlp.seudominio DLP_UPLOAD_TOKEN=... ./sync-cookies.sh</span>
 <span class="c"># -&gt; {"cookies": 81}</span></pre>
-  </div></div>
-
-  <div class="step"><div class="b">5</div><div>
-    <h3>Baixar</h3>
-    <p>Cole a URL, escolha <strong>Vídeo</strong> (MP4 até 1080p) ou <strong>Áudio</strong> (M4A) e aguarde. O progresso aparece na lista e o botão "Baixar" surge no fim.</p>
+</div></div>
+<div class="step"><div class="b">5</div><div>
+<h3>Baixar</h3>
+<p>Cole a URL, escolha <strong>Vídeo</strong> (MP4 até 1080p) ou <strong>Áudio</strong> (M4A) e aguarde. O progresso aparece na lista e o botão "Baixar" surge no fim.</p>
 <pre><span class="c"># o arquivo fica disponível por 6 horas, então some</span>
 <span class="c"># quer mais tempo? DLP_TTL_HOURS no .env</span></pre>
-  </div></div>
+</div></div>
 </div></section>
-
 <section id="cookies"><div class="wrap">
-  <span class="chip">Cookies</span>
-  <h2>Por que isso existe, e quando renovar</h2>
-  <p class="sub">O YouTube e as outras fontes desafiam IPs de datacenter. Os cookies de um navegador logado resolvem isso — e são a única manutenção recorrente do projeto.</p>
-  <div class="grid g2">
-    <div class="card"><h3>Quando um download falhar</h3><p>A própria interface diz <em>"cookies expirados"</em> quando reconhece o motivo. Aí você exporta de novo e reenvia — não precisa adivinhar. Na prática, cookies do YouTube duram semanas.</p></div>
-    <div class="card"><h3>Por que não dá para automatizar no Windows</h3><p>Edge e Chrome cifram os cookies com App-Bound Encryption desde a versão 127: só o próprio navegador obtém a chave. Por isso o caminho principal é o upload, e não um script.</p></div>
-  </div>
-  <div class="grid g2" style="margin-top:16px">
-    <div class="card"><h3>Cron semanal (opcional)</h3><p>Na máquina Linux com Firefox logado, dá para nunca ver o erro.</p><pre><span class="c"># toda segunda, 9h</span>
+<span class="chip">Cookies</span>
+<h2>Por que isso existe, e quando renovar</h2>
+<p class="sub">O YouTube e as outras fontes desafiam IPs de datacenter. Os cookies de um navegador logado resolvem isso — e são a única manutenção recorrente do projeto.</p>
+<div class="grid g2">
+<div class="card"><h3>Quando um download falhar</h3><p>A própria interface diz <em>"cookies expirados"</em> quando reconhece o motivo. Aí você exporta de novo e reenvia — não precisa adivinhar. Na prática, cookies do YouTube duram semanas.</p></div>
+<div class="card"><h3>Por que não dá para automatizar no Windows</h3><p>Edge e Chrome cifram os cookies com App-Bound Encryption desde a versão 127: só o próprio navegador obtém a chave. Por isso o caminho principal é o upload, e não um script.</p></div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+<div class="card"><h3>Cron semanal (opcional)</h3><p>Na máquina Linux com Firefox logado, dá para nunca ver o erro.</p><pre><span class="c"># toda segunda, 9h</span>
 0 9 * * 1 DLP_URL=<span class="s">https://dlp.seudominio</span> DLP_UPLOAD_TOKEN=... /caminho/sync-cookies.sh</pre></div>
-    <div class="card"><h3>Operação do dia a dia</h3><p>Praticamente nula.</p><pre><span class="k">docker compose logs -f app</span>     <span class="c"># ver o que houve</span>
+<div class="card"><h3>Operação do dia a dia</h3><p>Praticamente nula.</p><pre><span class="k">docker compose logs -f app</span>     <span class="c"># ver o que houve</span>
 <span class="k">docker compose restart app</span>     <span class="c"># atualiza o yt-dlp no boot</span></pre></div>
-  </div>
+</div>
 </div></section>
-
 <section id="roadmap"><div class="wrap">
-  <span class="chip">Roadmap</span>
-  <h2>Onde está e o que ficou de fora</h2>
-  <p class="sub">A v1 está completa e verificada ponta a ponta. O que não está aqui foi cortado de propósito — é ferramenta pessoal, não produto.</p>
-  <div class="phase"><div class="tag">v1 ✓</div><div class="d"><strong>Completo</strong><span>Fila, download de vídeo e áudio, PWA com senha, upload de cookies, expiração automática, deploy com Docker e Caddy. 77 testes, mais um que baixa um vídeo real, mais verificação da interface no navegador.</span></div></div>
-  <div class="phase"><div class="tag">Fora</div><div class="d"><strong>Cortado por YAGNI</strong><span>Escolha de resolução, playlists, legendas, corte de trechos, múltiplos usuários e retentativa automática. Cada um desses existiria para um público que este projeto não tem.</span></div></div>
-  <div class="phase"><div class="tag">Talvez</div><div class="d"><strong>Se doer o suficiente</strong><span>Botão de reenfileirar com um clique (hoje você recola a URL) e um instalador de PWA mais completo no Android.</span></div></div>
+<span class="chip">Roadmap</span>
+<h2>Onde está e o que ficou de fora</h2>
+<p class="sub">A v1 está completa e verificada ponta a ponta. O que não está aqui foi cortado de propósito — é ferramenta pessoal, não produto.</p>
+<div class="phase"><div class="tag">v1 ✓</div><div class="d"><strong>Completo</strong><span>Fila, download de vídeo e áudio, PWA com senha, upload de cookies, expiração automática, deploy com Docker e Caddy. 77 testes, mais um que baixa um vídeo real, mais verificação da interface no navegador.</span></div></div>
+<div class="phase"><div class="tag">Fora</div><div class="d"><strong>Cortado por YAGNI</strong><span>Escolha de resolução, playlists, legendas, corte de trechos, múltiplos usuários e retentativa automática. Cada um desses existiria para um público que este projeto não tem.</span></div></div>
+<div class="phase"><div class="tag">Talvez</div><div class="d"><strong>Se doer o suficiente</strong><span>Botão de reenfileirar com um clique (hoje você recola a URL) e um instalador de PWA mais completo no Android.</span></div></div>
 </div></section>
-
 <footer>
-  <div class="wrap">
-    <div class="pill">Python 3.12</div><div class="pill">FastAPI</div><div class="pill">yt-dlp + ffmpeg</div><div class="pill">SQLite</div><div class="pill">Docker + Caddy</div>
-    <p style="margin-top:18px">inemadlp · uso pessoal, uma VPS, um usuário ·
+<div class="wrap">
+<div class="pill">Python 3.12</div><div class="pill">FastAPI</div><div class="pill">yt-dlp + ffmpeg</div><div class="pill">SQLite</div><div class="pill">Docker + Caddy</div>
+<p style="margin-top:18px">inemadlp · uso pessoal, uma VPS, um usuário ·
       <a href="https://github.com/inematds/inemadlp">inematds/inemadlp</a> ·
       <a href="https://inema.club">INEMA.CLUB</a></p>
-  </div>
+</div>
 </footer>
-
 <script>
   (function(){
     var KEY='inemadlp-theme';
